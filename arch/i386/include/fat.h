@@ -19,8 +19,34 @@ typedef struct __fat_bpb{
 	uint16_t nheads;
 	uint32_t nhsect;
 	uint32_t lsect;
-}BPB;
+}__attribute__((packed)) BPB;
+struct __fat_extBS_16{
+	uint8_t bios_drive_num;
+	uint8_t resv1;
+	uint8_t sig;
+	uint32_t vid;
+	uint8_t v_lab[11];
+	uint8_t ftl[8];
+}__attribute__((packed));
+struct __fat_extBS_32{
+	uint32_t tabsz32;
+	uint16_t extFlags;
+	uint16_t ver;
+	uint32_t rootCluster;
+	uint16_t fat_info;
+	uint16_t backupBS;
+	uint8_t reserved_0[12];
+	uint8_t bios_drive_num;
+	uint8_t resv1;
+	uint8_t sig;
+	uint32_t vid;
+	uint8_t v_lab[11];
+	uint8_t vtl[8];
+}__attribute__((packed));
 int __fat12_read(const char *path,void *buf, int n);
 int __fat16_read(const char *path,void *buf, int n);
 int __fat32_read(const char *path,void *buf, int n);
+int __fat12_write(const char *path,void *buf,int n);
+int __fat16_write(const char *path,void *buf,int n);
+int __fat32_write(const char *path,void *buf,int n);
 #endif

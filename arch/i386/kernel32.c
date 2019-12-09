@@ -1,3 +1,4 @@
+#include <vfs.h>
 #include <stdio.h>
 #include <libmem.h>
 #include <stdlib.h>
@@ -75,9 +76,9 @@ void puti(int n){
 		putc('-');
 		n*=-1;
 	}
-	for(int i = 0; i < intlen(n);i++){
-		putc(n/pow(10,intlen(n)-i-1)+'0');
-		n/=10;
+	for(int i = intlen(n)-1; i >= 0;i--){
+		putc(n/pow(10,i)+'0');
+		n-=(n/pow(10,i))*pow(10,i);
 	}
 }
 void vga_putent(uint16_t off,uint16_t val){
@@ -117,7 +118,6 @@ char *toX(int n){
 		memcpy(x,"0\0",2);
 		return x;
 	}
-	bzero(x,xlen(n)+1);
 	int i = xlen(n);
 	while(i >= 0){
 		x[i] = (n & 15) >= 0xa ? (n & 0xf) - 0xa + 'a' : (n&15) + '0';
@@ -139,6 +139,10 @@ void panic(void *msg){
 	asm("hlt");
 }
 void putx(int n){
+	if(n == 0){
+		putc('0');
+		return;
+	}
 	char *x = toX(n);
 	puts(x);
 	free(x);
@@ -161,21 +165,20 @@ void _start(){
 	libmem_init();
 #endif
 	init_int();
+
 	ata_dev_t **ata = libata_init();
 	disable_stdcursor();
 
 	int res = ps2_init();
 	if(!res){
-//		blacklist(ps2_getc);
-//		blacklist(stdin_read);
+		puts("ps2 failed\n");
+		blacklist(ps2_getc);
+		blacklist(stdin_read);
 	}
 	else{
 		puts("PS/2 Driver Initialization Successful\n");
 	}
-	while(1){
-		putc(ps2_getc());
-		blink();
-//		for(int i = 0; i < 0x4000000;i++);
-	}
-	panic("Nothing to do\n");
+	map_devs(ata);
+	puts("[Loader]Select root:");
+	panic("Nothing to do");
 }

@@ -8,16 +8,20 @@
 #define STDIN 0
 #define STDOUT 1
 #include <stdint.h>
+#include <libata.h>
 typedef struct dev{
+	uint8_t name[0xff];
 	uint32_t begin;//Begining cluster of data. Useful for partitions
 	uint32_t clustersize;//Size of cluster e.g. 512 bytes for sector
-	int read(void *buf,int offset,int count);//read count bytes at offset into device to buf
-	int write(void *buf,int offset,int count);//Write count bytes to offset of buf
-}dev_t __attribute__((packed));
+	int *read;//read count bytes at offset into device to buf
+	int *write;//Write count bytes to offset of buf
+	void *dataPntr;
+	struct dev *nxt;
+}__attribute__((packed)) dev_t;
 typedef struct dev_list{
 	dev_t *dev;
-	dev_list_t *nxt;
-}dev_list_t __attribute__((packed));
+	struct dev_list *nxt;
+}__attribute__((packed)) dev_list_t;
 typedef struct mountpoint{
 	int fd;//File descriptor for mount point
 	dev_t *dev;//Device file to provide read and write functions
@@ -27,16 +31,15 @@ typedef struct FileDescriptor{
 	uint8_t alloc;
 	dev_t *device;
 	unsigned long offset;
-}FileDescriptor __attribute__((packed));
+}__attribute__((packed)) FileDescriptor;
 typedef struct fsDriver{
-	int read(int file,void *buf,int n);
-	int write(int file,void *buf,int n);
-	int open(const char * path,unsigned int flags);
-	int lseek(int file,int offset,int mac);
-}fs_t;
+	int *read;
+	int *write;
+	int *open;
+	int *lseek;
+}fs_t;//These are all pointers to functions
 void __mount(int fd,int offset,dev_t *dev,fs_t *fs);
 void register_dev(dev_t *pntr);
-
-void map_devs();
+void map_devs(ata_dev_t **pntr);
 int close(int fd);
 #endif

@@ -4,9 +4,17 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <libmem.h>
+uint32_t allocFree();
+void map_page(void *pntr,void * n);
 void *malloc(unsigned long n){
-	struct __malloc_mem *pntr = (struct __malloc_mem *)MALLOC_BASE;
-	while(pntr->alloc == 1 || pntr->size < n){
+	struct __malloc_mem *pntr = (struct __malloc_mem *)((uint32_t)4096*1024*20);
+	if(!page_mapped(pntr)){
+		map_page(pntr,pntr);
+	}
+	while(pntr->alloc == 1 || (pntr->size < n && pntr->size != 0)){
+		if(!page_mapped(pntr)){
+			map_page((void*)allocFree(),pntr);
+		}	
 		pntr=(struct __malloc_mem *)((uint8_t*)pntr+sizeof(*pntr)+pntr->size);
 		continue;
 		
@@ -47,14 +55,17 @@ void libmem_init(){
 	for(int i = 0; i < 1024;i++)
 		page255[i] = (addr + i * 4096) | 3;
 	paged[255] = (uint32_t)page255 | 3;
-	paged[1023] = (uint32_t)&paged[1023] | 3;
+	paged[1023] = (uint32_t)paged | 3;
 	debug("libmem","Loading Page Directory...");
 	init_page(paged);
 }
 int page_mapped(void *addr){
-	return paged[(uint32_t)addr/4096/1024] != 2;
+	unsigned long *pd = (unsigned long *)0xfffff000;
+	return pd[(uint32_t)addr>>22] != 2;
 }
 void identp(void *_addr){
+	map_page(_addr,_addr);
+	return;
 	uint32_t paget[1024]__attribute__((aligned(4096)));
 	uint32_t addr = (uint32_t)_addr/4096/1024*4096*1024;
 	for(int i = 0; i < 1024;i++)
@@ -64,6 +75,12 @@ void identp(void *_addr){
 }
 uint32_t page_floor(uint32_t addr){
 	return (addr/4096/1024)*4096*1024;//Integer division. Get rid of those pesky intermediate bits
+}
+uint32_t allocFree(){
+	int i = 0;
+	while(page_mapped((void*)i))
+		i+=4096*1024;
+	return i;
 }
 void *realloc(void *pntr,unsigned long n){
 	void *newpntr = malloc(n);
@@ -79,4 +96,16 @@ void init_page(uint32_t *pg){
         asm("or $0x80000001,%eax");
         asm("mov %eax,%cr0");
 }
+void map_page(void *paddr,void *vaddr){
+	unsigned int pdindex = (unsigned int)vaddr >> 22;
+	unsigned int ptindex = (unsigned int)vaddr >> 12 & 0x3ff;
+	unsigned long *pd = (unsigned long *)0xfffff000;
+	if(pd[pdindex] == 2){
+		uint32_t paget[1024]__attribute__((aligned(4096)));
+		for(int i = 0; i < 1024;i++)
+			paget[i] = ((uint32_t)paddr/1024/4096*1024*4096 + i*4096) | 3;
 
+		pd[pdindex] = (uint32_t)paget | 3;
+
+	}
+}

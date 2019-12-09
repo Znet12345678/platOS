@@ -94,7 +94,7 @@ int poll(uint16_t port){
 void _delay(){
 	for(int i = 0; i < 4096;i++);//Extra long delay
 }
-void ata_generic(uint16_t port,uint8_t slave,unsigned int lba,unsigned int n,uint8_t op){
+void ata_generic24(uint16_t port,uint8_t slave,unsigned int lba,unsigned int n,uint8_t op){
 	outb(port+6,slave | ((lba >> 24) & 0xf));
 	outb(port+2,n);
 	outb(port+3,lba&0xff);
@@ -102,8 +102,8 @@ void ata_generic(uint16_t port,uint8_t slave,unsigned int lba,unsigned int n,uin
 	outb(port+5,(lba >> 16) & 0xff);
 	outb(port+7,op);
 }
-int ata_read(uint16_t port,uint8_t slave,void *buf,unsigned int lba,unsigned int n){
-	ata_generic(port,slave == 0xa0 ? 0xe0 : 0xf0,lba,n,0x20);
+int ata_read24(uint16_t port,uint8_t slave,void *buf,unsigned int lba,unsigned int n){
+	ata_generic24(port,slave == 0xa0 ? 0xe0 : 0xf0,lba,n,0x20);
 	unsigned int offset = 0;
 	while(n > 0){
 		_delay();
@@ -115,8 +115,8 @@ int ata_read(uint16_t port,uint8_t slave,void *buf,unsigned int lba,unsigned int
 		n--;
 	}
 }
-int ata_write(uint16_t port,uint8_t slave,void *buf,unsigned int lba,unsigned int n){
-	ata_generic(port,slave == 0xa0 ? 0xe0 : 0xf0,lba,n,0x30);
+int ata_write24(uint16_t port,uint8_t slave,void *buf,unsigned int lba,unsigned int n){
+	ata_generic24(port,slave == 0xa0 ? 0xe0 : 0xf0,lba,n,0x30);
 	unsigned int offset = 0;
 	while(n > 0){
 		_delay();
@@ -127,14 +127,62 @@ int ata_write(uint16_t port,uint8_t slave,void *buf,unsigned int lba,unsigned in
 			outw(port,*((uint16_t*)buf + offset));
 		}
 		n--;
-		ata_generic(port,slave,lba,n,0xe7);
+		ata_generic24(port,slave,lba,n,0xe7);
 		uint8_t val = inb(port+STATUS_OFFSET);
 		while(val & 0x80)val = inb(port+STATUS_OFFSET);
 	}
 }
-int aread(struct ata_dev *dev,void *buf,unsigned int lba,unsigned int count){
-	return ata_read(dev->ioaddr,dev->slavebyte,buf,lba,count);
+void ata_generic48(uint16_t port,uint8_t slave,unsigned long lba, unsigned short sc,unsigned int cmd){
+	outb(port+6,slave);
+	outb(port+2,(sc >> 8) & 0xff);
+	outb(port+3,((uint8_t*)&lba)[3]);
+	outb(port+4,((uint8_t*)&lba)[4]);
+       	outb(port+5,((uint8_t*)&lba)[5]);
+	outb(port+2,(sc) & 0xff);
+	outb(port+3,((uint8_t*)&lba)[0]);
+	outb(port+4,((uint8_t*)&lba)[1]);
+	outb(port+5,((uint8_t*)&lba)[2]);
+	outb(port+7,cmd);
 }
-int awrite(struct ata_dev *dev,void *buf,unsigned int lba,unsigned int count){
-	return ata_write(dev->ioaddr,dev->slavebyte,buf,lba,count);
+int ata_read48(uint16_t port,uint8_t slave,void *buf,unsigned long lba,unsigned short sc){
+	ata_generic48(port,slave == 0xa0 ? 0x40 : 0x50,lba,sc,0x24);
+	unsigned int offset = 0;
+	while(sc > 0){
+		_delay();
+		int chk = poll(port);
+		if(chk < 0)
+			return -1;
+		for(int i = 0; i < 256;i++,offset++){
+			outw(port,*((uint16_t*)(buf) + offset));
+		}
+		sc--;
+	}
+}
+int ata_write48(uint16_t port,uint8_t slave,void *buf,unsigned long lba,unsigned short sc){
+	ata_generic48(port,slave == 0xa0 ? 0x40 :0x50,lba,sc,0x34);
+	unsigned int offset = 0;
+	while(sc > 0){
+		_delay();
+		int chk = poll(port);
+		if(chk < 0)
+			return -1;
+		for(int i = 0; i < 256;i++,offset++){
+			*((uint16_t*)(buf) + offset) = inw(port);
+		}
+		ata_generic24(port,slave,lba,sc,0xe7);
+		uint8_t v = inb(port +STATUS_OFFSET);
+		while(v & 0x80) v = inb(port+STATUS_OFFSET);
+	}
+}
+int aread24(struct ata_dev *dev,void *buf,unsigned int lba,unsigned int count){
+	return ata_read24(dev->ioaddr,dev->slavebyte,buf,lba,count);
+}
+int awrite24(struct ata_dev *dev,void *buf,unsigned int lba,unsigned int count){
+	return ata_write24(dev->ioaddr,dev->slavebyte,buf,lba,count);
+}
+int aread48(struct ata_dev *dev,void *buf,unsigned int lba,unsigned int count){
+	return ata_read48(dev->ioaddr,dev->slavebyte,buf,lba,count);
+}
+int awrite48(struct ata_dev *dev,void *buf,unsigned int lba,unsigned int count){
+	return ata_write48(dev->ioaddr,dev->slavebyte,buf,lba,count);
 }

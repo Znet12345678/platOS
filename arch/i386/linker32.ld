@@ -16,5 +16,4 @@ SECTIONS{
 	kernel32_dev_first_node = .;
 	.devnode32 : { *(.devnode32) }
 	code_end = .;
-	
 }

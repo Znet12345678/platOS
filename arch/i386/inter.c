@@ -9,13 +9,15 @@ void exception(int i){
 		uint32_t addr;
 		asm("mov %cr2,%eax");
 		asm("mov %%eax,%0" : "=m"(addr));
-		puts("Page fault at address 0x");
-		putx(addr);
-		puts("\n");
-
 	}
-	if(i != 0xe)
+	if(i != 0xe){
+		puts("ERROR CODE ");
+
+		putx(i);
+		puts("\n");
 		panic("Exception Handler Not Implemented");
+	
+	}
 }
 asm("c:");
 void _exception(){

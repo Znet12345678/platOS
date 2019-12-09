@@ -1,7 +1,8 @@
-KERNEL_CFILES = kernel32.c acpi.c inter.c libmem.c libata.c libfat.c ps2.c 
-KERNEL32_OFILES = kernel32.c.o acpi.c.o inter.c.o multiboot.o libmem.c.o libata.c.o libfat.c.o ps2.c.o
-CFLAGS = -DEARLY_MEM_PROTECT
+KERNEL_CFILES = kernel32.c acpi.c initdev.c inter.c libmem.c libata.c libfat.c ps2.c 
+KERNEL32_OFILES = kernel32.c.o acpi.c.o initdev.c.o inter.c.o multiboot.o libmem.c.o libata.c.o libfat.c.o ps2.c.o
+CFLAGS = -DEARLY_MEM_PROTECT -Werror
 all:
+	@rm -f *.o
 	@for file in ${KERNEL_CFILES} ;do \
 		echo "(CC) $$file" ; \
 		i386-elf-gcc -c $$file -o $$file.o -nostdlib -ffreestanding -I. -Iinclude ${CFLAGS}  ; \
