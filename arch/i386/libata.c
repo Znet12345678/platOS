@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <libmem.h>
 #include <stdint.h>
 #include <libata.h>
@@ -6,7 +7,7 @@ uint8_t bus[4] = {0,0,0,0};
 uint8_t drives[8] = {0,0,0,0,0,0,0,0};
 uint32_t lastcommand;
 ata_dev_t **libata_init(){
-	ata_dev_t **ret = malloc(4*sizeof(*ret));
+	ata_dev_t **ret = malloc(8*sizeof(*ret));
 	debug("libata","init");
 	debug("libata","Detecting ATA buses...");
 	bus[0] = inb(0x1f7) == 0xff ? 0 : 1;
@@ -150,10 +151,13 @@ int ata_read48(uint16_t port,uint8_t slave,void *buf,unsigned long lba,unsigned 
 	while(sc > 0){
 		_delay();
 		int chk = poll(port);
-		if(chk < 0)
+		if(chk < 0){
+			puts("I/O Error\n");
 			return -1;
+		}
 		for(int i = 0; i < 256;i++,offset++){
-			outw(port,*((uint16_t*)(buf) + offset));
+			*((uint16_t*)buf + offset) = inw(port);
+
 		}
 		sc--;
 	}

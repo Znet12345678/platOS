@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <libata.h>
 typedef struct dev{
-	uint8_t name[0xff];
+	uint8_t name[0x20];
 	uint32_t begin;//Begining cluster of data. Useful for partitions
 	uint32_t clustersize;//Size of cluster e.g. 512 bytes for sector
 	int *read;//read count bytes at offset into device to buf
