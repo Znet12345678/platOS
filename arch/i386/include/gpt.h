@@ -18,5 +18,5 @@ struct Partition_Table_header{
 	uint32_t sizeOfPartEnt;
 	uint32_t CRC32PartEnt;
 }__attribute__((packed));
-
+#define GPT_SIG "EFI PART"
 #endif

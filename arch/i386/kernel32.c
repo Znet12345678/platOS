@@ -40,18 +40,18 @@ void putc(uint8_t c){
 		return;
 	ccolor = (VGA_COLOR_BLACK << 4 | VGA_COLOR_LIGHT_GREY);
 	if(c != '\n'){
-		*(uint16_t*)((uint16_t*)0xb8000 + y*80+x) = (uint16_t)c | (uint16_t)ccolor << 8;
+		*((uint16_t*)0xb8000 + y*80+x) = c | (ccolor << 8);
 		x++;
 	}
 	if(x >= 80 || c == '\n'){
 		if(c == '\n')
-			*(uint16_t*)((uint16_t*)0xb8000 + y * 80 + x)  = ' ' | (ccolor << 8);
+			*((uint16_t*)0xb8000 + y * 80 + x)  = ' ' | (ccolor << 8);
 		y++;
 		x = 0;
 	}
 	if(y >= 25){
 		for(int i = 0; i < 80*25;i++)
-			*(uint16_t*)((uint16_t*)vgabase + i) = *(uint16_t*)((uint16_t*)0xb8000 + i + 80);
+			*((uint16_t*)0xb8000 + i) = *(uint16_t*)((uint16_t*)0xb8000 + i + 80);
 		y--;
 	}
 }
@@ -84,14 +84,16 @@ void puti(int n){
 void vga_putent(uint16_t off,uint16_t val){
 	*(uint16_t*)(0xb8000 + off*2) = val;
 }
+//uint8_t cccolor = ccolor;
 void blink(){
 	vga_putent(y*80+x,' ' | ccolor << 8);
 	if(ccolor ==15 << 4) ccolor = 0;
 	else	ccolor = 15 << 4;	
 }
 void init_vidmem(){
+	x = 0; y = 0;
 	for(int i = 0; i < 80*26;i++)
-		*(vgabase+i) = ' ' | (ccolor << 8);
+		*((uint16_t*)0xb8000+i) = ' ' |  (ccolor << 8);
 }
 unsigned long strlen(const char *str){
 	unsigned long ret = 0;
@@ -158,11 +160,12 @@ uint8_t blacklist_shellcode[] = {0x66, 0xb8, 0x00, 0x00, 0x00, 0x00, 0xc3};
 void blacklist(void *pntr){
 	memcpy(pntr,blacklist_shellcode,sizeof(blacklist_shellcode));
 }
-void _start(){
+void main(){
 
 	init_vidmem();
+	puts("platOS Kernel Up...\n");
 #ifdef EARLY_MEM_PROTECT
-	libmem_init();
+	//libmem_init();
 #endif
 	init_int();
 

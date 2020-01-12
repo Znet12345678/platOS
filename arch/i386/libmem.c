@@ -36,28 +36,38 @@ void bzero(void *addr,unsigned long n){
 	for(unsigned long i = 0; i < n;i++)
 		*(uint8_t*)(addr + n) = 0;
 }
-uint32_t paged[1024] __attribute__((aligned(4096)));
-void libmem_init(){
-	debug("libmem","zeroing lowmem");
-	bzero(0,0xffff);
+//uint32_t paged[1024] __attribute__ __attribute__((aligned(4096)));
+#define __PRE_CALL(a,b) (a-0xc0000000)(b)
+void  libmem_init(){
+	uint32_t paged[1024] __attribute__((aligned(4096)));
 	for(int i = 0; i < 1024;i++)
 		paged[i] = 2;
 	uint32_t paget[1024] __attribute__((aligned(4096)));;
+	uint32_t base = 0x00000000;
 	for(int i = 0;i < 1024;i++)
 		paget[i] = (i*4096) | 3;
-	paged[0] = (uint32_t) paget | 3;
+	paged[0xC0000000/4096/1024] = (uint32_t) (paget) | 3;
+	paged[0] = (uint32_t) (paget) | 3;
 	uint32_t paget2[1024] __attribute__((aligned(4096)));
-	for(int i = 0; i < 1024;i++)
-		paget2[i] = (i * 4096 + 4096*1024*1) | 3;
-	paged[1] = (uint32_t) paget2 | 3;
+//	for(int i = 0; i < 1024;i++)
+//		paget2[i] = (i * 4096 + 4096*1024*1) | 3;
+//	paged[1] = (uint32_t) paget2 | 3;
 	uint32_t addr = 0x3FC00000;
 	uint32_t page255[1024] __attribute__((aligned(4096)));
 	for(int i = 0; i < 1024;i++)
 		page255[i] = (addr + i * 4096) | 3;
 	paged[255] = (uint32_t)page255 | 3;
 	paged[1023] = (uint32_t)paged | 3;
-	debug("libmem","Loading Page Directory...");
+//	debug("libmem","Loading Page Directory...");
 	init_page(paged);
+//	map_page(0,(void*)0xC0000000);
+};
+void map_kernel(){
+	libmem_init();	
+}
+void __pre_init(void *addr){
+	libmem_init();
+	map_page((void*)(2*1024*4096),addr);
 }
 int page_mapped(void *addr){
 	unsigned long *pd = (unsigned long *)0xfffff000;
@@ -71,7 +81,7 @@ void identp(void *_addr){
 	for(int i = 0; i < 1024;i++)
 		paget[i] = (i * 4096 + (uint32_t)addr) | 3;
 
-	paged[(uint32_t)addr/4096/1024] = (uint32_t)paget | 3;
+//	paged[(uint32_t)addr/4096/1024] = (uint32_t)paget | 3;
 }
 uint32_t page_floor(uint32_t addr){
 	return (addr/4096/1024)*4096*1024;//Integer division. Get rid of those pesky intermediate bits
@@ -89,7 +99,7 @@ void *realloc(void *pntr,unsigned long n){
 	free(pntr);
 	return newpntr;
 }
-void init_page(uint32_t *pg){
+void  init_page(uint32_t *pg){
 	asm("mov %0,%%eax" : : "m"(pg));
         asm("mov %eax,%cr3");
         asm("mov %cr0,%eax");
@@ -108,4 +118,7 @@ void map_page(void *paddr,void *vaddr){
 		pd[pdindex] = (uint32_t)paget | 3;
 
 	}
+}
+void unmap(void *pntr){
+//	unsigned int pdindex = (unsigned int)
 }

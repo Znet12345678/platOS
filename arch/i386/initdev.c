@@ -4,6 +4,8 @@
 #include <libio.h>
 #include <libmem.h>
 #include <stdlib.h>
+#include <string.h>
+#include <gpt.h>
 #include <stdint.h>
 #include <mbr.h>
 extern void *kernel32_dev_first_node;
@@ -89,6 +91,20 @@ void diskPartProbe(struct dev *ata,struct dev *ataparts,ata_dev_t **lst){
 		}	
 	}
 }
+uint32_t crc32(void *pntr,uint32_t *CRCTab,unsigned long n){
+	uint32_t start = -1;
+	for(int i = 0; i < n;i++){
+		uint8_t indx = (start ^ ((uint8_t*)pntr)[i]);
+		start = (start >> 8) ^ CRCTab[indx];
+	}
+	start^=-1;
+	return start;
+}
 int GPT(struct dev *ata,struct dev *ataparts, struct ata_dev *lst,struct partEnt *ent){
-	return 0;
+	uint8_t *sectorBuffer = malloc(512);
+	((int(*)())ata->read)(lst->ioaddr,lst->slavebyte,sectorBuffer,1,1);
+	if(memcmp(sectorBuffer,GPT_SIG,8))
+		return 0;
+	uint32_t hdrSize = *(uint32_t*)(sectorBuffer+3);
+	//uint64_t partLba = *(uint32_t*)(sectorBuffer+10)/;
 }

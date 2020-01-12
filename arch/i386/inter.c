@@ -115,7 +115,9 @@ void init_int(){
 //	putx(idtd);
 //	puts("\n");
 //	putx(arr);
+
 	idtd.limit = 0x100*sizeof(struct IDTDescr)-1;
 	idtd.base = (uint32_t)arr;
 	asm("lidt %0" : :"m"(idtd));
+
 }
