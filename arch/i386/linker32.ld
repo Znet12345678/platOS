@@ -1,9 +1,9 @@
 ENTRY(_start)
 
 SECTIONS{
-	. = 0xC0001000;
+	. = 0xC0400000;
 	code_begin = .;
-	.start : AT(0x1000) { *(.start) }
+	.start : AT(0x400000) { *(.start) }
 	.text : { 
 		. = ALIGN(8);
 		*(.multiboot )

@@ -3,6 +3,7 @@
 #include <stdint.h>
 extern void *code_begin;
 extern void *code_end;
+void unmap(uint32_t pindx);
 void init_page(uint32_t *pg);
 #define EBDA_BASE 0x000A0000
 #define EBDA_END 0x000Bffff

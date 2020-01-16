@@ -161,7 +161,7 @@ void blacklist(void *pntr){
 	memcpy(pntr,blacklist_shellcode,sizeof(blacklist_shellcode));
 }
 void main(){
-
+	unmap(1);
 	init_vidmem();
 	puts("platOS Kernel Up...\n");
 #ifdef EARLY_MEM_PROTECT

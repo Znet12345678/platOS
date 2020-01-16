@@ -46,7 +46,12 @@ void  libmem_init(){
 	uint32_t base = 0x00000000;
 	for(int i = 0;i < 1024;i++)
 		paget[i] = (i*4096) | 3;
-	paged[0xC0000000/4096/1024] = (uint32_t) (paget) | 3;
+	base = 0x400000;
+	uint32_t kpaget[1024] __attribute__((aligned(4096)));
+	for(int i = 0; i < 1024;i++)
+		kpaget[i] = base+(i*4096) | 3;
+	paged[1] = (uint32_t)kpaget | 3;
+	paged[0xC0400000/4096/1024] = (uint32_t) (kpaget) | 3;
 	paged[0] = (uint32_t) (paget) | 3;
 	uint32_t paget2[1024] __attribute__((aligned(4096)));
 //	for(int i = 0; i < 1024;i++)
@@ -119,6 +124,6 @@ void map_page(void *paddr,void *vaddr){
 
 	}
 }
-void unmap(void *pntr){
-//	unsigned int pdindex = (unsigned int)
+void unmap(uint32_t pdindex){
+	((unsigned long *)0xfffff000)[pdindex] = 2;
 }
