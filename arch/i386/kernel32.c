@@ -80,7 +80,7 @@ void puti(int n){
 		putc('-');
 		n*=-1;
 	}
-	for(int i = intlen(n)-1; i >= 0;i--){
+	for(int i = intlen(n); i >= 0;i--){
 		putc(n/pow(10,i)+'0');
 		n-=(n/pow(10,i))*pow(10,i);
 	}
@@ -109,29 +109,15 @@ void puts(const char *str){
 	for(int i = 0; i < strlen(str);i++)
 		putc(str[i]);
 }
-int xlen(int n){
-	int ret = 0;
-	while(n > 0){
+int xlen(unsigned int n){
+	unsigned int ret = 0;
+	while(n > 0 && !(n == 0 && n % 16 != 0)){
 		ret++;
 		n/=16;
 	}
-	return ret-1;
+	return ret;
 }
-char *toX(int n){
-	char *x = malloc(xlen(n)+1);
-	if(n == 0){
-		x = realloc(x,2);
-		memcpy(x,"0\0",2);
-		return x;
-	}
-	int i = xlen(n);
-	while(i >= 0){
-		x[i] = (n & 15) >= 0xa ? (n & 0xf) - 0xa + 'a' : (n&15) + '0';
-		n>>=4;
-		i--;
-	}
-	return x;
-}
+
 void memcpy(void *dest,const void *src,unsigned long n){
 	uint8_t *bdest = (uint8_t*)dest;
 	uint8_t *bsrc = (uint8_t*)src;
@@ -146,14 +132,24 @@ void panic(void *msg){
 		asm("hlt");
 	}
 }
-void putx(int n){
+
+void putx(unsigned long n){
+	char arr[xlen(n)+1];
+	bzero(arr,xlen(n)+1);
+	int i = 0;
 	if(n == 0){
-		putc('0');
+		puts("0");
 		return;
 	}
-	char *x = toX(n);
-	puts(x);
-	free(x);
+	int size = xlen(n);
+	while(size-i-1 >= 0){
+		arr[size-i-1]=n%16 < 10 ? n%16+'0' : n%16-10+'A';
+		n/=16;
+		i++;
+	}
+	for(int i = 0; i < size;i++)
+		putc(arr[i]);
+
 }
 void debug(const char *task,const char *msg){
 	puts("[");

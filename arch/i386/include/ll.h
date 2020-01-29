@@ -3,7 +3,7 @@
 struct LinkedList{
 	void *data;
 	struct LinkedList *next;
-}__attribute__((packed));
+};
 int llnew();
 void *llopen(int lld);
 #endif

@@ -39,17 +39,12 @@ int map_devs(ata_dev_t **lst){
 	diskPartProbe(ata,ataParts,lst);
 	
 	int lld = llnew();
-	
-	struct LinkedList *llhd = (struct LinkedList *)llopen(lld);
-	llhd->data = malloc(sizeof(struct dev_list));
 
+	struct LinkedList *llhd = (struct LinkedList *)llopen(lld);
+
+
+	llhd->data = malloc(sizeof(struct dev_list));
 	struct dev_list *dev_list = llhd->data;	
-	if(!page_mapped((void*)LLLOC)){
-		puts("mapping address 0x");
-		putx((uint32_t)LLLOC);
-		puts("\n");
-		map_page((void*)allocFree(),(void*)LLLOC);
-	}
 	dev_list->dev = stdin_dev;
 	dev_list->nxt = malloc(sizeof(*dev_list->nxt));
 	dev_list = dev_list->nxt;

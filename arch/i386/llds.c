@@ -11,23 +11,41 @@ void *llopen(int lld){
 	struct LinkedList *lst = (struct LinkedList *)LLLOC;
 	for(int i = 0; i < lld;i++)
 		lst = lst->next;
-	return lst->data;	
+
+	return lst;	
 }
 int llnew(){
 	int lld = 0;
 	if(!page_mapped((void*)LLLOC)){
+#ifdef DEBUG
+		puts("Mapping LLDS page\n");
+#endif
 		void *buf = (void*)allocFree();
+
 		int v = map_page(buf,(void*)LLLOC);
 		if(!v)
 			panic("Failed to allocate critical page");
+#ifdef DEBUG
+		puts("mapped page ");
+		putx((uint32_t)allocFree());
+		puts(":");
+		putx(LLLOC);
+		puts("\n");
+
+		bzero((void*)LLLOC,sizeof(struct LinkedList));
+#endif
 	}
 	struct LinkedList *lst = (struct LinkedList *)LLLOC;
-	while(lst->next != 0){
-		puts(".");
+	uint8_t *buf = (uint8_t*)LLLOC;
+	
+	while(lst->next != NULL){
+		putx((uint32_t)lst->next);
 		lld++;
 		lst = lst->next;
 	}
 	lst->next = malloc(sizeof(*lst->next));
-	
-	return lld+1;
+#ifdef DEBUG
+	puts("Exiting control of LLDS\n");
+#endif
+	return lld;
 }

@@ -1,3 +1,4 @@
+#include <KMEM.h>
 #include <string.h>
 #include <libio.h>
 #include <stdlib.h>
@@ -7,11 +8,11 @@
 uint32_t allocFree();
 int map_page(void *pntr,void * n);
 void *malloc(unsigned long n){
-	struct __malloc_mem *pntr = (struct __malloc_mem *)((uint32_t)4096*1024*20);
+	struct __malloc_mem *pntr = (struct __malloc_mem *)MALLOC_BASE;
 	if(!page_mapped(pntr)){
-		map_page(pntr,pntr);
+		map_page((void*)allocFree(),pntr);
 	}
-	while(pntr->alloc == 1 || (pntr->size < n && pntr->size != 0)){
+	while(pntr->alloc == 1 || (pntr->size < (n+sizeof(*pntr)) && pntr->size != 0)){
 		if(!page_mapped(pntr)){
 			map_page((void*)allocFree(),pntr);
 		}	
@@ -19,22 +20,26 @@ void *malloc(unsigned long n){
 		continue;
 		
 	}
-	pntr->size = n;
+	pntr->size = n+sizeof(*pntr);
 	pntr->alloc = 1;
 	bzero(pntr + sizeof(*pntr),n);
 	return (uint8_t*)pntr + sizeof(*pntr);
 }
 void free(void *pntr){
-	struct __malloc_mem *_pntr = (struct __malloc_mem *)((uint8_t*)pntr-sizeof(struct __malloc_mem));
+	struct __malloc_mem *_pntr = (struct __malloc_mem *)((uint8_t*)pntr-sizeof(*_pntr));
 	if(_pntr->alloc != 1){
-		panic("DOUBLE FREE EXCEPTION!\n");
+		puts("\nBase address:0x");
+		putx((uint32_t)pntr);
+		puts("\nAlloc status:");
+		puti(_pntr->alloc);
+		panic("\nDOUBLE FREE EXCEPTION!\n");
 	
 	}
 	_pntr->alloc = 0;
 }
 void bzero(void *addr,unsigned long n){
 	for(unsigned long i = 0; i < n;i++)
-		*(uint8_t*)(addr + n) = 0;
+		*(uint8_t*)(addr + i) = 0;
 }
 //uint32_t paged[1024] __attribute__ __attribute__((aligned(4096)));
 #define __PRE_CALL(a,b) (a-0xc0000000)(b)
@@ -95,14 +100,7 @@ uint32_t page_floor(uint32_t addr){
 	return (addr/4096/1024)*4096*1024;//Integer division. Get rid of those pesky intermediate bits
 }
 int page_free_p(uint32_t p);
-uint32_t allocFree(){
-	int i = 1,j;
-	while(page_mapped((void*)i) && !page_free_p(i)){
-		j= (i-1) << 22;
-		i++;
-	}
-	return j;
-}
+
 void *realloc(void *pntr,unsigned long n){
 	void *newpntr = malloc(n);
 	struct __malloc_mem *m = (struct __malloc_mem *)((uint8_t*)pntr-sizeof(struct __malloc_mem));
@@ -117,6 +115,7 @@ void  init_page(uint32_t *pg){
         asm("or $0x80000001,%eax");
         asm("mov %eax,%cr0");
 }
+static uint32_t paddrArr[1024] = { [0 ... 1023]0};
 int map_page(void *paddr,void *vaddr){
 	unsigned int pdindex = (unsigned int)vaddr >> 22;
 	unsigned int ptindex = (unsigned int)vaddr >> 12 & 0x3ff;
@@ -125,24 +124,30 @@ int map_page(void *paddr,void *vaddr){
 		uint32_t paget[1024]__attribute__((aligned(4096)));
 		for(int i = 0; i < 1024;i++)
 			paget[i] = ((uint32_t)paddr/1024/4096*1024*4096 + i*4096) | 3;
-
-
+		
 		pd[pdindex] = (uint32_t)paget | 3;
+		int i = 0;
+		while(paddrArr[i] != 0)
+			i++;
+		paddrArr[i] = (uint32_t)paddr;
 		return 1;
 	}
 	return 0;
 }
-int page_free_p(uint32_t try){
-	unsigned long *pd = (unsigned long *)0xfffff000;
-	for(int i = 0; i < 1024;i++){
-		if((pd[i] & 3) == 3){
-			unsigned long* paget = (unsigned long*)0xffc00000+(0x400*i);
-			for(int j = 0; j < 1024;j++)
-				if((paget[j]-try) < 4096)
-					return 0;
-		}
+int inTab(int a){
+	for(int i = 0; i < 1024;i++)
+		if(a == paddrArr[i])
+			return 1;
+	return 0;
+}
+uint32_t allocFree(){
+	uint32_t t = 5;
+	uint32_t j = (t - 1) << 22;
+	while(inTab(j)){
+		j=(t-1) << 22;
+		t++;
 	}
-	return 1;
+	return j;
 }
 void unmap(uint32_t pdindex){
 	((unsigned long *)0xfffff000)[pdindex] = 2;

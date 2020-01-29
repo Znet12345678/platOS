@@ -12,7 +12,7 @@ void init_page(uint32_t *pg);
 #define BIOS_BASE 0x000E0000
 #define BIOS_END 0x000FFFFF
 #define KERNEL_BASE code_begin
-#define MALLOC_BASE code_end
+//#define MALLOC_BASE code_end
 struct __malloc_mem{
 	uint8_t alloc;
 	uint32_t size;
