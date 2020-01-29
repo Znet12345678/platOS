@@ -3,6 +3,8 @@
 #include <stdint.h>
 extern void *code_begin;
 extern void *code_end;
+int map_page(void* paddr,void*vaddr);
+uint32_t allocFree();
 void unmap(uint32_t pindx);
 void init_page(uint32_t *pg);
 #define EBDA_BASE 0x000A0000

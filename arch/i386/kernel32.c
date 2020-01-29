@@ -41,11 +41,12 @@ void putc(uint8_t c){
 	ccolor = (VGA_COLOR_BLACK << 4 | VGA_COLOR_LIGHT_GREY);
 	if(c != '\n'){
 		*((uint16_t*)0xb8000 + y*80+x) = c | (ccolor << 8);
+		*((uint16_t*)0xb8000 + y*80+x+1) = ' ' | VGA_COLOR_LIGHT_GREY << 12;
 		x++;
 	}
 	if(x >= 80 || c == '\n'){
-		if(c == '\n')
-			*((uint16_t*)0xb8000 + y * 80 + x)  = ' ' | (ccolor << 8);
+		*((uint16_t*)0xb8000 + y * 80 + x ) = 0;
+//		*((uint16_t*)0xb8000 + y * 80 + x + 1) = 0;
 		y++;
 		x = 0;
 	}
@@ -53,6 +54,9 @@ void putc(uint8_t c){
 		for(int i = 0; i < 80*25;i++)
 			*((uint16_t*)0xb8000 + i) = *(uint16_t*)((uint16_t*)0xb8000 + i + 80);
 		y--;
+	}
+	if(x == 0){
+		*((uint16_t*)0xb8000+y*80+x) = ' ' | VGA_COLOR_LIGHT_GREY << 12;
 	}
 }
 int intlen(unsigned int n){
@@ -136,9 +140,11 @@ void memcpy(void *dest,const void *src,unsigned long n){
 }
 void panic(void *msg){
 	puts(msg);
-	puts("\npanic():Disabling Interrupts and Halting CPU");
-	asm("cli");
-	asm("hlt");
+	puts("\npanic():Disabling Interrupts and Halting CPU\n");
+//	asm("cli");
+	while(1){
+		asm("hlt");
+	}
 }
 void putx(int n){
 	if(n == 0){
@@ -163,7 +169,13 @@ void blacklist(void *pntr){
 void main(){
 	unmap(1);
 	init_vidmem();
-	puts("platOS Kernel Up...\n");
+	puts("platOS Kernel ");
+	puts(KERNEL_IDENT);
+	puts("\n[Kernel Architecture:");
+	puts(KERNEL_ARCH);
+	puts(" Release ");
+	puts(RELEASE);
+	puts("]\n");
 #ifdef EARLY_MEM_PROTECT
 	//libmem_init();
 #endif

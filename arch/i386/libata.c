@@ -31,12 +31,16 @@ ata_dev_t **libata_init(){
 		drives[6] = ident(0x168,0xa0);
 		drives[7] = ident(0x168,0xb0);
 	}
+#ifdef DEBUG
 	debug("libata","Found drives:");
+#endif
 	for(int i = 0; i < 8;i++){
 		if(drives[i]){
+#ifdef DEBUG
 			puts("Drive ");
 			putc('0'+i);
 			puts(" up!\n");
+#endif
 			ret[i] = malloc(sizeof(*ret[i]));
 			ret[i]->ioaddr = i < 2 ? 0x1f0 : 0x170;
 			ret[i]->slavebyte = i % 2 == 0 ? 0xa0 : 0xb0;
@@ -46,14 +50,18 @@ ata_dev_t **libata_init(){
 
 }
 uint8_t ident(uint16_t port,uint8_t slavebyte){
+#ifdef DEBUG
 	debug("libata","identify");
+#endif
 	outb(port+6,slavebyte);
 	for(int i = port+2; i <= port+5;i++)
 		outb(i,0);
 	outb(port+7,0xec);
 	uint8_t val = inb(port+7);
 	if(val == 0){
+#ifdef DEBUG
 		debug("libata","Error 0x00");
+#endif
 		return 0;
 	}
 a:;
@@ -62,11 +70,15 @@ a:;
 	}
 	uint16_t chk = inb(0x1f4) | inb(0x1f5) << 8;
 	if(chk){
+#ifdef DEBUG
 		debug("libata","Error 0x01");
+#endif
 		return 0;
 	}
 	if(val & 1){
+#ifdef DEBUG
 		debug("libata","Error 0x02");
+#endif
 		return 0;
 	}
 	if(!((val >> 3) & 1)){
@@ -76,7 +88,9 @@ a:;
 	for(int i = 0; i < 256;i++)
 		inw(port);
 	lastcommand = port | slavebyte << 16 | 0xec << 24;
+#ifdef DEBUG
 	debug("libata","Success");
+#endif
 	return 1;
 }
 

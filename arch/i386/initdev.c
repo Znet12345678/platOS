@@ -8,12 +8,14 @@
 #include <gpt.h>
 #include <stdint.h>
 #include <mbr.h>
+#include <ll.h>
+#include <KMEM.h>
 extern void *kernel32_dev_first_node;
 void diskPartProbe(struct dev *ata,struct dev *ataParts,ata_dev_t **lst);
 void stdout_write(void *pntr,int offset, int n){
 	puts(pntr);
 }
-void map_devs(ata_dev_t **lst){
+int map_devs(ata_dev_t **lst){
 	struct dev *stdin_dev = malloc(sizeof(*stdin_dev));	
 	strcpy(stdin_dev->name,"stdin\0");
 	stdin_dev->begin = 0;
@@ -35,13 +37,18 @@ void map_devs(ata_dev_t **lst){
 	struct dev *ataParts = malloc(sizeof(*ataParts));
 
 	diskPartProbe(ata,ataParts,lst);
+	
+	int lld = llnew();
+	
+	struct LinkedList *llhd = (struct LinkedList *)llopen(lld);
+	llhd->data = malloc(sizeof(struct dev_list));
 
-	struct dev_list *dev_list = (struct dev_list *)kernel32_dev_first_node;
-	if(!page_mapped(kernel32_dev_first_node)){
+	struct dev_list *dev_list = llhd->data;	
+	if(!page_mapped((void*)LLLOC)){
 		puts("mapping address 0x");
-		putx((uint32_t)kernel32_dev_first_node);
+		putx((uint32_t)LLLOC);
 		puts("\n");
-		identp(kernel32_dev_first_node);
+		map_page((void*)allocFree(),(void*)LLLOC);
 	}
 	dev_list->dev = stdin_dev;
 	dev_list->nxt = malloc(sizeof(*dev_list->nxt));
@@ -53,6 +60,25 @@ void map_devs(ata_dev_t **lst){
 	dev_list->nxt = malloc(sizeof(*dev_list->nxt));
 	dev_list = dev_list->nxt;
 	dev_list->dev = ataParts;
+	return lld;
+}
+int kopen(int lld,const char *name){
+	int fd = 0;
+	
+	struct dev_list *dev_list = (struct dev_list *)llopen(lld);
+	while(dev_list != 0 && memcmp(dev_list->dev->name,name,strlen(name)) != 0){
+			if(dev_list->dev->nxt != 0)
+				dev_list->dev = dev_list->dev->nxt;
+			else
+				dev_list=dev_list->nxt;
+			fd++;
+	}
+	if(dev_list == 0)
+		return -1;
+	return fd;
+}
+int read(int kfd,void *buf,unsigned long n){
+	
 }
 int ATADEVREAD(struct dev *d,void *buf,unsigned int offset,unsigned int nb){
 	return ((int (*)())d->read)(((ata_dev_t*)d->dataPntr)->ioaddr,((ata_dev_t*)d->dataPntr)->slavebyte,d->begin+offset/d->clustersize,nb%d->clustersize == 0 ? nb/d->clustersize:nb/d->clustersize+1);
@@ -88,6 +114,7 @@ void diskPartProbe(struct dev *ata,struct dev *ataparts,ata_dev_t **lst){
 				}
 			}		
 			free(buf);
+
 		}	
 	}
 }

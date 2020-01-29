@@ -40,6 +40,6 @@ typedef struct fsDriver{
 }fs_t;//These are all pointers to functions
 void __mount(int fd,int offset,dev_t *dev,fs_t *fs);
 void register_dev(dev_t *pntr);
-void map_devs(ata_dev_t **pntr);
+int map_devs(ata_dev_t **pntr);
 int close(int fd);
 #endif

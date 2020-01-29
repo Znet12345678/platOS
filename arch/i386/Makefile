@@ -1,8 +1,8 @@
 LDR_CFILES = loader.c
 LDR_OFILES = loader.c.o _start.c.o multiboot.o libmem.c.o
-KERNEL_CFILES = kernel32.c _start.c acpi.c initdev.c inter.c libmem.c libata.c libfat.c ps2.c 
-KERNEL32_OFILES = kernel32.c.o acpi.c.o _start.o _start.c.o initdev.c.o multiboot.o inter.c.o libmem.c.o libata.c.o libfat.c.o ps2.c.o
-CFLAGS = -DEARLY_MEM_PROTECT -Werror -g
+KERNEL_CFILES = kernel32.c llds.c  _start.c acpi.c initdev.c inter.c libmem.c libata.c libfat.c ps2.c 
+KERNEL32_OFILES = kernel32.c.o llds.c.o acpi.c.o _start.o _start.c.o initdev.c.o multiboot.o inter.c.o libmem.c.o libata.c.o libfat.c.o ps2.c.o
+CFLAGS = -DKERNEL_IDENT=\"v0-ALPHA\" -DKERNEL_ARCH="\"i386(x86)\"" -DRELEASE=\"Protected\" -DEARLY_MEM_PROTECT -Werror -g
 all:
 	@rm -f *.o
 #	@echo "(CC) _start.c.o"

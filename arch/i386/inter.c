@@ -5,6 +5,7 @@
 #include <libio.h>
 #include <stdint.h>
 void exception(int i){
+
 	if(i == 0xe){
 		uint32_t addr;
 		asm("mov %cr2,%eax");

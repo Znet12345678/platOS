@@ -43,10 +43,10 @@ struct __fat_extBS_32{
 	uint8_t v_lab[11];
 	uint8_t vtl[8];
 }__attribute__((packed));
-int __fat12_read(const char *path,void *buf, int n);
-int __fat16_read(const char *path,void *buf, int n);
-int __fat32_read(const char *path,void *buf, int n);
-int __fat12_write(const char *path,void *buf,int n);
-int __fat16_write(const char *path,void *buf,int n);
-int __fat32_write(const char *path,void *buf,int n);
+int __fat12_read(const char *path,void *buf, unsigned long n);
+int __fat16_read(const char *path,void *buf, unsigned long n);
+int __fat32_read(const char *path,void *buf, unsigned long n);
+int __fat12_write(const char *path,void *buf,unsigned long n);
+int __fat16_write(const char *path,void *buf,unsigned long n);
+int __fat32_write(const char *path,void *buf,unsigned long n);
 #endif

@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <libmem.h>
 uint32_t allocFree();
-void map_page(void *pntr,void * n);
+int map_page(void *pntr,void * n);
 void *malloc(unsigned long n){
 	struct __malloc_mem *pntr = (struct __malloc_mem *)((uint32_t)4096*1024*20);
 	if(!page_mapped(pntr)){
@@ -74,6 +74,9 @@ void __pre_init(void *addr){
 	libmem_init();
 	map_page((void*)(2*1024*4096),addr);
 }
+int abs(int i){
+	return i < 0 ? i * -1 : i;
+}
 int page_mapped(void *addr){
 	unsigned long *pd = (unsigned long *)0xfffff000;
 	return pd[(uint32_t)addr>>22] != 2;
@@ -91,11 +94,14 @@ void identp(void *_addr){
 uint32_t page_floor(uint32_t addr){
 	return (addr/4096/1024)*4096*1024;//Integer division. Get rid of those pesky intermediate bits
 }
+int page_free_p(uint32_t p);
 uint32_t allocFree(){
-	int i = 0;
-	while(page_mapped((void*)i))
-		i+=4096*1024;
-	return i;
+	int i = 1,j;
+	while(page_mapped((void*)i) && !page_free_p(i)){
+		j= (i-1) << 22;
+		i++;
+	}
+	return j;
 }
 void *realloc(void *pntr,unsigned long n){
 	void *newpntr = malloc(n);
@@ -111,7 +117,7 @@ void  init_page(uint32_t *pg){
         asm("or $0x80000001,%eax");
         asm("mov %eax,%cr0");
 }
-void map_page(void *paddr,void *vaddr){
+int map_page(void *paddr,void *vaddr){
 	unsigned int pdindex = (unsigned int)vaddr >> 22;
 	unsigned int ptindex = (unsigned int)vaddr >> 12 & 0x3ff;
 	unsigned long *pd = (unsigned long *)0xfffff000;
@@ -120,9 +126,23 @@ void map_page(void *paddr,void *vaddr){
 		for(int i = 0; i < 1024;i++)
 			paget[i] = ((uint32_t)paddr/1024/4096*1024*4096 + i*4096) | 3;
 
-		pd[pdindex] = (uint32_t)paget | 3;
 
+		pd[pdindex] = (uint32_t)paget | 3;
+		return 1;
 	}
+	return 0;
+}
+int page_free_p(uint32_t try){
+	unsigned long *pd = (unsigned long *)0xfffff000;
+	for(int i = 0; i < 1024;i++){
+		if((pd[i] & 3) == 3){
+			unsigned long* paget = (unsigned long*)0xffc00000+(0x400*i);
+			for(int j = 0; j < 1024;j++)
+				if((paget[j]-try) < 4096)
+					return 0;
+		}
+	}
+	return 1;
 }
 void unmap(uint32_t pdindex){
 	((unsigned long *)0xfffff000)[pdindex] = 2;
