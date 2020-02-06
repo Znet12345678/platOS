@@ -7,22 +7,44 @@
 #include <libmem.h>
 uint32_t allocFree();
 int map_page(void *pntr,void * n);
+void writeMTab(void *pntr,unsigned long size){
+	struct __malloc_mem *_pntr = pntr;
+	_pntr->size= size;
+}
 void *malloc(unsigned long n){
 	struct __malloc_mem *pntr = (struct __malloc_mem *)MALLOC_BASE;
 	if(!page_mapped(pntr)){
+		puts("(0x");
+		putx(allocFree());
+		puts(",");
+		putx((uint32_t)pntr);
+		puts(")\n");
 		map_page((void*)allocFree(),pntr);
 	}
-	while(pntr->alloc == 1 || (pntr->size < (n+sizeof(*pntr)) && pntr->size != 0)){
+	if(n == 0)
+		return 0;
+	while(1){
+
 		if(!page_mapped(pntr)){
+			puts("(0x");
+			putx(allocFree());
+			puts(",0x");
+			putx((uint32_t)pntr);
+			puts(")\n");
 			map_page((void*)allocFree(),pntr);
 		}	
+		if(pntr->alloc == 0 && (pntr->size > n+sizeof(*pntr)) || (pntr->alloc == 0 &&pntr->size == 0))
+			break;
 		pntr=(struct __malloc_mem *)((uint8_t*)pntr+sizeof(*pntr)+pntr->size);
 		continue;
 		
 	}
-	pntr->size = n+sizeof(*pntr);
+	int orig = pntr->size;
+	pntr->size = n;
 	pntr->alloc = 1;
-	bzero(pntr + sizeof(*pntr),n);
+	if(orig > 0){
+		writeMTab(pntr+n+sizeof(*pntr),orig-n-sizeof(*pntr));
+	}
 	return (uint8_t*)pntr + sizeof(*pntr);
 }
 void free(void *pntr){

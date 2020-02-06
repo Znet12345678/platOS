@@ -39,13 +39,18 @@ int llnew(){
 	uint8_t *buf = (uint8_t*)LLLOC;
 	
 	while(lst->next != NULL){
-		putx((uint32_t)lst->next);
+//		putx((uint32_t)lst->next);
 		lld++;
 		lst = lst->next;
 	}
 	lst->next = malloc(sizeof(*lst->next));
-#ifdef DEBUG
-	puts("Exiting control of LLDS\n");
-#endif
+
 	return lld;
+}
+void llclose(int llfd){
+	struct LinkedList *lst = (struct LinkedList *)LLLOC;
+	for(int i = 0; i < llfd-1;i++)
+		lst = lst->next;
+	free(lst->next);
+	lst->next = lst->next->next;
 }

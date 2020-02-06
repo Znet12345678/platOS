@@ -80,7 +80,7 @@ void puti(int n){
 		putc('-');
 		n*=-1;
 	}
-	for(int i = intlen(n); i >= 0;i--){
+	for(int i = intlen(n)-1; i >= 0;i--){
 		putc(n/pow(10,i)+'0');
 		n-=(n/pow(10,i))*pow(10,i);
 	}
@@ -124,10 +124,23 @@ void memcpy(void *dest,const void *src,unsigned long n){
 	for(int i = 0; i < n;i++)
 		bdest[i] = bsrc[i];
 }
-void panic(void *msg){
-	puts(msg);
-	puts("\npanic():Disabling Interrupts and Halting CPU\n");
-//	asm("cli");
+void panic(){
+	void *eip;
+	void *cs;
+	asm("movl 8(%esp),%eax");
+	asm("movl 12(%esp),%ebx");
+	asm("mov %%eax,%0" :"=m"(eip));
+	asm("mov %%ebx,%0" : "=m"(cs));
+	puts("\n");
+	for(int i = 0; i < 80;i++)
+		putc('#');
+	puts("->0x");
+	putx((uint32_t)eip+(uint32_t)cs);
+	puts("\n");
+	puts("panic():Disabling Interrupts and Halting CPU\n");
+	asm("cli");
+	for(int i = 0; i < 80;i++)
+		putc('#');
 	while(1){
 		asm("hlt");
 	}
@@ -162,6 +175,11 @@ uint8_t blacklist_shellcode[] = {0x66, 0xb8, 0x00, 0x00, 0x00, 0x00, 0xc3};
 void blacklist(void *pntr){
 	memcpy(pntr,blacklist_shellcode,sizeof(blacklist_shellcode));
 }
+void _panic(const char *msg){
+	puts(msg);
+	asm("cli");
+	asm("hlt");
+}
 void main(){
 	unmap(1);
 	init_vidmem();
@@ -169,7 +187,7 @@ void main(){
 	puts(KERNEL_IDENT);
 	puts("\n[Kernel Architecture:");
 	puts(KERNEL_ARCH);
-	puts(" Release ");
+	puts(" Release: ");
 	puts(RELEASE);
 	puts("]\n");
 #ifdef EARLY_MEM_PROTECT
@@ -189,7 +207,20 @@ void main(){
 	else{
 		puts("PS/2 Driver Initialization Successful\n");
 	}
-	map_devs(ata);
-	puts("[Loader]Select root:");
-	panic("Nothing to do");
+	int llfd = map_devs(ata);
+	vfs_init();
+	puts("[Loader]Select root:\n");
+	int fd = kopen(llfd,"disk");
+	if(fd <0){
+		puts("Failed to open disk driver\nhlt");
+		asm("hlt");
+	}
+	int r = 0;
+	dev_t *dev = malloc(sizeof(*dev));
+	while(kread(fd,dev,sizeof(*dev))!= 0 ){
+		puts(dev->name);
+		puts("\n");
+	}
+	_panic("panic():nothing to do\n");	
+	
 }

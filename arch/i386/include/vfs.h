@@ -9,6 +9,7 @@
 #define STDOUT 1
 #include <stdint.h>
 #include <libata.h>
+#include <ll.h>
 typedef struct dev{
 	uint8_t name[0x20];
 	uint32_t begin;//Begining cluster of data. Useful for partitions
@@ -26,6 +27,7 @@ typedef struct mountpoint{
 	int fd;//File descriptor for mount point
 	dev_t *dev;//Device file to provide read and write functions
 	char path[MAX_PATH_LEN];
+	struct mountpoint *nxt;
 }mount_t;
 typedef struct FileDescriptor{
 	uint8_t alloc;
@@ -37,8 +39,18 @@ typedef struct fsDriver{
 	int *write;
 	int *open;
 	int *lseek;
+	int *verify;
+	LinkedList *data;
 }fs_t;//These are all pointers to functions
-void __mount(int fd,int offset,dev_t *dev,fs_t *fs);
+typedef struct kfd{
+	void *data;
+	unsigned long pos;
+}kfd_t;
+int vfs_init();
+int kopen(int dlld,const char *name);
+int kread(int llfd,void *buf,unsigned long n);
+int klseek(int llfd,int pos, int flags);
+int  __mount(int llfd,const char *mountpoint,dev_t *dev,fs_t *fs);
 void register_dev(dev_t *pntr);
 int map_devs(ata_dev_t **pntr);
 int close(int fd);

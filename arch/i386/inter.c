@@ -101,11 +101,11 @@ void init_int(){
 	struct IDTDescr *arr = malloc(sizeof(*arr)*256);
 //	size-=size2;
 	for(int i = 0; i < 0x20;i++){
-		arr[i].offset_1= (uint16_t)(((uint32_t)_exception + off + size*i) & 0xffff);
+		arr[i].offset_1= (uint16_t)(((uint32_t)panic) & 0xffff);
 		arr[i].selector = 8;
 		arr[i].zero = 0;
 		arr[i].type_attr = 0b10001110;
-		arr[i].offset_2 = (uint16_t)((((uint32_t)_exception +off + size*i) >> 16) & 0xffff);
+		arr[i].offset_2 = (uint16_t)(((uint32_t)panic >> 16) & 0xffff);
 	}
 	for(int i = 0x20;i < 0x100;i++){
 		arr[i].selector = 8;

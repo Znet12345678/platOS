@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stdio.h>
 #include <vfs.h>
 #include <ps2.h>
@@ -33,11 +34,11 @@ int map_devs(ata_dev_t **lst){
 	ata->clustersize = 512;
 	ata->read = (int*)ata_read24;
 	ata->write = (int*)ata_write24;
-	strcpy(ata->name,"diskcntrl");
+	strcpy(ata->name,"disk\0");
 	struct dev *ataParts = malloc(sizeof(*ataParts));
 
 	diskPartProbe(ata,ataParts,lst);
-	
+	ata->nxt = ataParts;
 	int lld = llnew();
 
 	struct LinkedList *llhd = (struct LinkedList *)llopen(lld);
@@ -52,28 +53,77 @@ int map_devs(ata_dev_t **lst){
 	dev_list->nxt = malloc(sizeof(*dev_list->nxt));
 	dev_list = dev_list->nxt;
 	dev_list->dev = ata;
-	dev_list->nxt = malloc(sizeof(*dev_list->nxt));
-	dev_list = dev_list->nxt;
-	dev_list->dev = ataParts;
+	dev_t *d = ata->nxt;
+
+	dev_list->nxt = NULL;
 	return lld;
 }
 int kopen(int lld,const char *name){
-	int fd = 0;
-	
-	struct dev_list *dev_list = (struct dev_list *)llopen(lld);
+	struct dev_list *dev_list = (struct dev_list *)((struct LinkedList *)llopen(lld))->data;
 	while(dev_list != 0 && memcmp(dev_list->dev->name,name,strlen(name)) != 0){
-			if(dev_list->dev->nxt != 0)
-				dev_list->dev = dev_list->dev->nxt;
-			else
-				dev_list=dev_list->nxt;
-			fd++;
+		dev_list=dev_list->nxt;
 	}
 	if(dev_list == 0)
 		return -1;
-	return fd;
+	int llfd = llnew();
+	LinkedList *ll = llopen(llfd);
+	kfd_t *kfd = malloc(sizeof(*kfd));
+	kfd->data = dev_list->dev;
+	kfd->pos = 0;
+	ll->data = kfd;
+	ll->next = NULL;
+	return llfd;
 }
-int read(int kfd,void *buf,unsigned long n){
-	
+int klseek(int llfd,int pos,int flags){
+	if(flags == SEEK_SET){
+		LinkedList *ll = llopen(llfd);
+		((kfd_t*)ll->data)->pos = pos;
+		return pos;
+	}else if(flags == SEEK_CUR){
+		LinkedList *ll = llopen(llfd);
+		return ((kfd_t*)ll->data)->pos;
+	}else if(flags == SEEK_END){
+		while(kread(llfd,NULL,1) == 1);//We can't know how big the device is through an llfd
+		return klseek(llfd,0,SEEK_CUR);
+	}
+
+}
+int kread(int llfd,void *buf,unsigned long n){
+	struct dev_list *dev_list = (struct dev_list *)llopen(llfd);
+	LinkedList *ll = llopen(llfd);	
+	dev_t *d = (dev_t*)((kfd_t*)ll->data)->data;
+	int pos = ((kfd_t*)ll->data)->pos;
+
+		
+	while(pos > 0){
+		if(pos >= sizeof(*d)){
+			pos-=sizeof(*d);
+			d = d->nxt;
+			continue;
+		}
+		d=(dev_t*)((uint8_t*)d+1);
+		pos--;
+	}
+	if(d == NULL)
+		return 0;
+	unsigned long i = 0;
+	while(i < n){
+		if(n-i >= sizeof(*d)){
+			if(buf != NULL)
+				memcpy(buf + i,(uint8_t*)(d + i),sizeof(*d));
+			i+=sizeof(*d);
+			d = d->nxt;
+			if(d == NULL)
+				break;
+			continue;
+		}
+		if(buf != NULL)
+			memcpy(buf + i,(uint8_t*)(d + i),1);
+		d=(dev_t*)((uint8_t*)d+1);
+		i++;
+	}
+        ((kfd_t*)ll->data)->pos+= i;
+	return i;
 }
 int ATADEVREAD(struct dev *d,void *buf,unsigned int offset,unsigned int nb){
 	return ((int (*)())d->read)(((ata_dev_t*)d->dataPntr)->ioaddr,((ata_dev_t*)d->dataPntr)->slavebyte,d->begin+offset/d->clustersize,nb%d->clustersize == 0 ? nb/d->clustersize:nb/d->clustersize+1);
@@ -90,7 +140,7 @@ void diskPartProbe(struct dev *ata,struct dev *ataparts,ata_dev_t **lst){
 			for(int j = 0; j < 4;j++){
 				struct partEnt *pentry = (struct partEnt*)((uint8_t*)buf + 0x1be + j * 0x10);
 				if(pentry->lba > 0){
-					if(GPT(ata,ataparts,lst[i],pentry))return;
+//					if(GPT(ata,ataparts,lst[i],pentry))return;
 					strcpy(ataparts->name,"disk");
 					ataparts->name[4] = 'a' + i;
 					ataparts->name[5] = '0' + j;
@@ -101,11 +151,8 @@ void diskPartProbe(struct dev *ata,struct dev *ataparts,ata_dev_t **lst){
 					ataparts->write = (int*)ATADEVWRITE;
 
 					ataparts->nxt = malloc(sizeof(*ataparts->nxt));
-					puts("init ");
-					puts(ataparts->name);
-					puts("\n");
-					ataparts=ataparts->nxt;	
 
+					ataparts=ataparts->nxt;
 				}
 			}		
 			free(buf);
