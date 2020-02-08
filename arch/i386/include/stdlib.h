@@ -8,4 +8,5 @@ void identp(void *addr);
 void *realloc(void *pntr,unsigned long size);
 void init_int();
 void panic();
+void _panic(const char *msg);
 #endif

@@ -176,6 +176,7 @@ void blacklist(void *pntr){
 	memcpy(pntr,blacklist_shellcode,sizeof(blacklist_shellcode));
 }
 void _panic(const char *msg){
+	puts("_panic():");
 	puts(msg);
 	asm("cli");
 	asm("hlt");

@@ -32,8 +32,9 @@ int open(const char *path,unsigned int f){
 int vfs_init(){
 	int llfd = llnew();
 	struct LinkedList *ll = llopen(llfd);
-	ll->data = malloc(sizeof(mount_t));
-	mount_t *pntr = (mount_t*)ll->data;
-	bzero(pntr,sizeof(*pntr));
+
+	mount_t *pntr = (mount_t*)malloc(sizeof(*pntr));
+	ll->data = pntr;
+
 	return llfd;
 }	

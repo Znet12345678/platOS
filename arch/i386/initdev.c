@@ -56,6 +56,9 @@ int map_devs(ata_dev_t **lst){
 	dev_t *d = ata->nxt;
 
 	dev_list->nxt = NULL;
+#ifdef DEBUG
+	puts("map_devs(...)->ret\n");
+#endif
 	return lld;
 }
 int kopen(int lld,const char *name){

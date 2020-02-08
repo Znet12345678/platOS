@@ -44,7 +44,9 @@ int llnew(){
 		lst = lst->next;
 	}
 	lst->next = malloc(sizeof(*lst->next));
-
+#ifdef DEBUG
+	puts("llnew()->ret\n");
+#endif
 	return lld;
 }
 void llclose(int llfd){

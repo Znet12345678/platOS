@@ -19,12 +19,21 @@ void *malloc(unsigned long n){
 		puts(",");
 		putx((uint32_t)pntr);
 		puts(")\n");
-		map_page((void*)allocFree(),pntr);
+		int r = map_page((void*)allocFree(),pntr);
+		if(r)
+			bzero(pntr,4096*1024);
+		else
+			_panic("failed to allocate page\n");
 	}
 	if(n == 0)
 		return 0;
 	while(1){
-
+		if(pntr->alloc != 0 && pntr->alloc != 1){
+			puts("0x");
+			putx((uint32_t)pntr);
+			puts("->");
+			_panic("malloc validity check failed\n");			
+		}
 		if(!page_mapped(pntr)){
 			puts("(0x");
 			putx(allocFree());
@@ -33,7 +42,7 @@ void *malloc(unsigned long n){
 			puts(")\n");
 			map_page((void*)allocFree(),pntr);
 		}	
-		if(pntr->alloc == 0 && (pntr->size > n+sizeof(*pntr)) || (pntr->alloc == 0 &&pntr->size == 0))
+		if(pntr->alloc == 0 && (pntr->size >= n) || (pntr->alloc == 0 &&pntr->size == 0))
 			break;
 		pntr=(struct __malloc_mem *)((uint8_t*)pntr+sizeof(*pntr)+pntr->size);
 		continue;
@@ -43,7 +52,7 @@ void *malloc(unsigned long n){
 	pntr->size = n;
 	pntr->alloc = 1;
 	if(orig > 0){
-		writeMTab(pntr+n+sizeof(*pntr),orig-n-sizeof(*pntr));
+		writeMTab((uint8_t*)pntr+n+sizeof(*pntr),orig-n-sizeof(*pntr));
 	}
 	return (uint8_t*)pntr + sizeof(*pntr);
 }
