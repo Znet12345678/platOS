@@ -1,8 +1,8 @@
 LDR_CFILES = loader.c
 LDR_OFILES = loader.c.o _start.c.o multiboot.o libmem.c.o
-KERNEL_CFILES = kernel32.c llds.c  _start.c acpi.c initdev.c inter.c libmem.c vfs.c libata.c libfat.c ps2.c 
-KERNEL32_OFILES = kernel32.c.o llds.c.o acpi.c.o _start.o _start.c.o initdev.c.o vfs.c.o multiboot.o inter.c.o libmem.c.o libata.c.o libfat.c.o ps2.c.o
-CFLAGS = -DKERNEL_IDENT=\"v0-ALPHA\" -DKERNEL_ARCH="\"i386(x86)\"" -DRELEASE="\"Protected DEBUG\"" -DDEBUG -DEARLY_MEM_PROTECT -Werror -g 
+KERNEL_CFILES = kernel32.c llds.c  _start.c acpi.c initdev.c inter.c libmem.c vfs.c libata.c  ps2.c fat.c 
+KERNEL32_OFILES = kernel32.c.o llds.c.o acpi.c.o _start.o _start.c.o initdev.c.o vfs.c.o multiboot.o inter.c.o fat.c.o libmem.c.o libata.c.o  ps2.c.o
+CFLAGS = -DKERNEL_IDENT=\"v0-ALPHA\" -DKERNEL_ARCH="\"i386(x86)\"" -DRELEASE="\"Protected DEBUG\"" -DDEBUG -DEARLY_MEM_PROTECT -Werror -g  
 all:
 	@rm -f *.o
 #	@echo "(CC) _start.c.o"
@@ -22,5 +22,8 @@ all:
 	@i386-elf-objcopy --only-keep-debug kernel32.elf kernel32.sym
 #	@echo "(GEN) kernel32.bin"
 #	@cat loader32.elf kernel32.elf > kernel32.bin
+bootloader:
+	nasm -f bin bs.asm -o bs.o
+
 clean:
-	rm -f *.o *.img* *.a *.so* *.1 *.SYS* *.elf *.bin *.sym
+	rm -f *.o *.img* *.a *.so*  *.1 *.SYS* *.elf *.bin *.sym

@@ -10,8 +10,22 @@ int map_page(void *pntr,void * n);
 void writeMTab(void *pntr,unsigned long size){
 	struct __malloc_mem *_pntr = pntr;
 	_pntr->size= size;
+	_pntr->alloc = 0;
+#ifdef MEM_DEBUG
+	puts("memtab ");
+	putx((uint32_t)pntr);
+	puts(" ");
+	putx(size);
+	puts("\n");
+#endif
 }
 void *malloc(unsigned long n){
+#ifdef MEM_DEBUG
+	puts("malloc(");
+	puti(n);
+	puts(")->");
+#endif
+	struct __malloc_mem *svpntr = (struct __malloc_mem *)MALLOC_BASE;
 	struct __malloc_mem *pntr = (struct __malloc_mem *)MALLOC_BASE;
 	if(!page_mapped(pntr)){
 		puts("(0x");
@@ -31,8 +45,13 @@ void *malloc(unsigned long n){
 		if(pntr->alloc != 0 && pntr->alloc != 1){
 			puts("0x");
 			putx((uint32_t)pntr);
-			puts("->");
-			_panic("malloc validity check failed\n");			
+			puts(":");
+			putx(pntr->alloc);
+			puts(":");
+			putx(pntr->size);
+			puts("\n");
+			_panic("malloc validity check failed\n");
+					
 		}
 		if(!page_mapped(pntr)){
 			puts("(0x");
@@ -44,6 +63,7 @@ void *malloc(unsigned long n){
 		}	
 		if(pntr->alloc == 0 && (pntr->size >= n) || (pntr->alloc == 0 &&pntr->size == 0))
 			break;
+		svpntr = pntr;
 		pntr=(struct __malloc_mem *)((uint8_t*)pntr+sizeof(*pntr)+pntr->size);
 		continue;
 		
@@ -54,9 +74,18 @@ void *malloc(unsigned long n){
 	if(orig > 0){
 		writeMTab((uint8_t*)pntr+n+sizeof(*pntr),orig-n-sizeof(*pntr));
 	}
+#ifdef MEM_DEBUG
+	putx((uint32_t)((uint8_t*)pntr + sizeof(*pntr)));
+	puts("\n");
+#endif
 	return (uint8_t*)pntr + sizeof(*pntr);
 }
 void free(void *pntr){
+#ifdef MEM_DEBUG
+	puts("free(0x");
+	putx((uint32_t)pntr);
+	puts(")\n");
+#endif
 	struct __malloc_mem *_pntr = (struct __malloc_mem *)((uint8_t*)pntr-sizeof(*_pntr));
 	if(_pntr->alloc != 1){
 		puts("\nBase address:0x");
@@ -66,6 +95,7 @@ void free(void *pntr){
 		panic("\nDOUBLE FREE EXCEPTION!\n");
 	
 	}
+	bzero((uint8_t*)pntr,*(uint32_t*)((uint8_t*)pntr-sizeof(*_pntr)+1));
 	_pntr->alloc = 0;
 }
 void bzero(void *addr,unsigned long n){
@@ -136,6 +166,7 @@ void *realloc(void *pntr,unsigned long n){
 	void *newpntr = malloc(n);
 	struct __malloc_mem *m = (struct __malloc_mem *)((uint8_t*)pntr-sizeof(struct __malloc_mem));
 	memcpy(newpntr,pntr,n > m->size ? m->size : n);
+
 	free(pntr);
 	return newpntr;
 }

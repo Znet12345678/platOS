@@ -3,6 +3,7 @@
  */
 #ifndef __FAT_H
 #define __FAT_H
+#include <vfs.h>
 #include <stdint.h>
 typedef struct __fat_bpb{
 	uint8_t jmp[3];
@@ -43,10 +44,17 @@ struct __fat_extBS_32{
 	uint8_t v_lab[11];
 	uint8_t vtl[8];
 }__attribute__((packed));
-int __fat12_read(const char *path,void *buf, unsigned long n);
-int __fat16_read(const char *path,void *buf, unsigned long n);
-int __fat32_read(const char *path,void *buf, unsigned long n);
-int __fat12_write(const char *path,void *buf,unsigned long n);
-int __fat16_write(const char *path,void *buf,unsigned long n);
-int __fat32_write(const char *path,void *buf,unsigned long n);
+fs_t *fat_init(dev_t*fat_part);
+int __fat12_read(int fd,void *buf, unsigned long n);
+int __fat16_read(int fd,void *buf, unsigned long n);
+int __fat32_read(int fd,void *buf, unsigned long n);
+int __fat12_write(int fd,void *buf,unsigned long n);
+int __fat16_write(int fd,void *buf,unsigned long n);
+int __fat32_write(int fd,void *buf,unsigned long n);
+int __fat12_open(const char *path,unsigned int flags);
+int __fat16_open(const char *path,unsigned int flags);
+int __fat32_open(const char *path,unsigned int flags);
+int __fat12_lseek(int fd,unsigned long pos,unsigned int flags);
+int __fat16_lseek(int fd,unsigned long pos,unsigned int flags);
+int __fat32_lseek(int fd,unsigned long pos,unsigned int flags);
 #endif

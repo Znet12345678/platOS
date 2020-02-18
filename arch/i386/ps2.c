@@ -58,6 +58,8 @@ char ps2_getc(){
 		panic("PS/2 driver not initialized but has been called. Refusing to countinue!\n\0");
 //		return 0;
 	}
+	while(!(inb(PS2_STATUS) & 1));
+	inb(0x60);
 a:;	while(!(inb(PS2_STATUS) & 1));
 	int b = inb(0x60);
 	if(b == 0x3a){
@@ -85,4 +87,16 @@ int stdin_read(void *buf,int offset,int count){		//Ignores offset
 		i++;
 	}
 	return 1;
+}
+char *gets(){
+	char *pntr = malloc(1);
+	unsigned char c;
+	int size = 1;
+	while((c = ps2_getc()) != '\n'){
+		putc(c);	
+		*(pntr + size-1) = c;
+		pntr = realloc(pntr,size+1);
+		size++;
+	}
+	return pntr;
 }

@@ -4,12 +4,21 @@
 #include <inter.h>
 #include <libio.h>
 #include <stdint.h>
+int errflg = 0;
+int chkerr(){
+	return errflg;
+}
 void exception(int i){
-
+	errflg = 1;
 	if(i == 0xe){
 		uint32_t addr;
 		asm("mov %cr2,%eax");
 		asm("mov %%eax,%0" : "=m"(addr));
+		asm("iret");
+	}
+	if(i == 0xd){
+		puts("General fault\n");
+		asm("iret");
 	}
 	if(i != 0xe){
 		puts("ERROR CODE ");
@@ -101,11 +110,11 @@ void init_int(){
 	struct IDTDescr *arr = malloc(sizeof(*arr)*256);
 //	size-=size2;
 	for(int i = 0; i < 0x20;i++){
-		arr[i].offset_1= (uint16_t)(((uint32_t)panic) & 0xffff);
+		arr[i].offset_1= (uint16_t)(((uint32_t)_exception + size*i + off) & 0xffff);
 		arr[i].selector = 8;
 		arr[i].zero = 0;
 		arr[i].type_attr = 0b10001110;
-		arr[i].offset_2 = (uint16_t)(((uint32_t)panic >> 16) & 0xffff);
+		arr[i].offset_2 = (uint16_t)((((uint32_t)_exception +size*i + off) >> 16) & 0xffff);
 	}
 	for(int i = 0x20;i < 0x100;i++){
 		arr[i].selector = 8;

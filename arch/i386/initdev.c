@@ -17,6 +17,9 @@ void stdout_write(void *pntr,int offset, int n){
 	puts(pntr);
 }
 int map_devs(ata_dev_t **lst){
+#ifdef DEBUG
+	puts("map_dev(...):init\n");
+#endif
 	struct dev *stdin_dev = malloc(sizeof(*stdin_dev));	
 	strcpy(stdin_dev->name,"stdin\0");
 	stdin_dev->begin = 0;
@@ -34,49 +37,67 @@ int map_devs(ata_dev_t **lst){
 	ata->clustersize = 512;
 	ata->read = (int*)ata_read24;
 	ata->write = (int*)ata_write24;
+	ata->dataPntr = lst;
 	strcpy(ata->name,"disk\0");
 	struct dev *ataParts = malloc(sizeof(*ataParts));
-
+#ifdef DEBUG
+	puts("diskPartProbe(...):call\n");
+#endif
 	diskPartProbe(ata,ataParts,lst);
+#ifdef DEBUG
+	puts("diskPartProbe(...):returned control\n");
+#endif
 	ata->nxt = ataParts;
 	int lld = llnew();
 
 	struct LinkedList *llhd = (struct LinkedList *)llopen(lld);
-
-
 	llhd->data = malloc(sizeof(struct dev_list));
 	struct dev_list *dev_list = llhd->data;	
 	dev_list->dev = stdin_dev;
-	dev_list->nxt = malloc(sizeof(*dev_list->nxt));
+	dev_list->nxt = malloc(sizeof(struct dev_list));
 	dev_list = dev_list->nxt;
 	dev_list->dev = stdout_dev;
-	dev_list->nxt = malloc(sizeof(*dev_list->nxt));
+	dev_list->nxt = malloc(sizeof(struct dev_list));
 	dev_list = dev_list->nxt;
 	dev_list->dev = ata;
 	dev_t *d = ata->nxt;
-
 	dev_list->nxt = NULL;
 #ifdef DEBUG
-	puts("map_devs(...)->ret\n");
+	puts("map_devs(...):ret\n");
 #endif
 	return lld;
 }
 int kopen(int lld,const char *name){
+	void *data = NULL;
 	struct dev_list *dev_list = (struct dev_list *)((struct LinkedList *)llopen(lld))->data;
-	while(dev_list != 0 && memcmp(dev_list->dev->name,name,strlen(name)) != 0){
+	while(dev_list != 0 && strcmp(dev_list->dev->name,name) != 0){
+		if(dev_list->dev->nxt != 0){
+			dev_t *dp = dev_list->dev;
+			while(strcmp(dp->name,name) != 0 &&  dp != NULL){
+				dp = dp->nxt;
+			}
+			if(dp != NULL){
+				data = dp;
+				break;
+			}
+		}
 		dev_list=dev_list->nxt;
 	}
-	if(dev_list == 0)
+	if(dev_list == 0 && data == NULL)
 		return -1;
 	int llfd = llnew();
 	LinkedList *ll = llopen(llfd);
 	kfd_t *kfd = malloc(sizeof(*kfd));
-	kfd->data = dev_list->dev;
+	if(data == NULL)
+		kfd->data = dev_list->dev;
+	else
+		kfd->data = data;
 	kfd->pos = 0;
 	ll->data = kfd;
 	ll->next = NULL;
 	return llfd;
 }
+
 int klseek(int llfd,int pos,int flags){
 	if(flags == SEEK_SET){
 		LinkedList *ll = llopen(llfd);
@@ -89,10 +110,19 @@ int klseek(int llfd,int pos,int flags){
 		while(kread(llfd,NULL,1) == 1);//We can't know how big the device is through an llfd
 		return klseek(llfd,0,SEEK_CUR);
 	}
+	return -1;
 
 }
 int kread(int llfd,void *buf,unsigned long n){
-	struct dev_list *dev_list = (struct dev_list *)llopen(llfd);
+	LinkedList *ll = llopen(llfd);
+	dev_t *d = (dev_t*)((kfd_t*)ll->data)->data;
+	int kfd = kopen(getdevs(),"disk");
+	dev_t *disk = ((dev_t*)((LinkedList*)llopen(kfd))->data);
+	int r = ((int (*)())(d->read))(disk,buf,((kfd_t*)ll->data)->pos,n);
+	((kfd_t*)ll->data)->pos+=r;
+	return r;
+}
+int kiter(int llfd,void *buf,unsigned long n){
 	LinkedList *ll = llopen(llfd);	
 	dev_t *d = (dev_t*)((kfd_t*)ll->data)->data;
 	int pos = ((kfd_t*)ll->data)->pos;
@@ -128,6 +158,7 @@ int kread(int llfd,void *buf,unsigned long n){
         ((kfd_t*)ll->data)->pos+= i;
 	return i;
 }
+
 int ATADEVREAD(struct dev *d,void *buf,unsigned int offset,unsigned int nb){
 	return ((int (*)())d->read)(((ata_dev_t*)d->dataPntr)->ioaddr,((ata_dev_t*)d->dataPntr)->slavebyte,d->begin+offset/d->clustersize,nb%d->clustersize == 0 ? nb/d->clustersize:nb/d->clustersize+1);
 }
@@ -154,7 +185,9 @@ void diskPartProbe(struct dev *ata,struct dev *ataparts,ata_dev_t **lst){
 					ataparts->write = (int*)ATADEVWRITE;
 
 					ataparts->nxt = malloc(sizeof(*ataparts->nxt));
-
+#ifdef DEBUG
+					puts(ataparts->name);
+#endif
 					ataparts=ataparts->nxt;
 				}
 			}		

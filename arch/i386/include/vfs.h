@@ -39,19 +39,22 @@ typedef struct fsDriver{
 	int *write;
 	int *open;
 	int *lseek;
-	int *verify;
+	int verify;
 	LinkedList *data;
 }fs_t;//These are all pointers to functions
 typedef struct kfd{
 	void *data;
 	unsigned long pos;
 }kfd_t;
+dev_t *getATA();
 int vfs_init();
 int kopen(int dlld,const char *name);
 int kread(int llfd,void *buf,unsigned long n);
+int kiter(int llfd,void *buf,unsigned long n);
 int klseek(int llfd,int pos, int flags);
 int  __mount(int llfd,const char *mountpoint,dev_t *dev,fs_t *fs);
 void register_dev(dev_t *pntr);
 int map_devs(ata_dev_t **pntr);
 int close(int fd);
+int getdevs();
 #endif

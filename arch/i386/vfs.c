@@ -15,7 +15,7 @@ int __mount(int llfd,const char *mountpoint,dev_t *d,fs_t *fs){
 	pntr->dev = d;
 	pntr->fd = ((int(*)())fs->open)(NULL,O_RDWR);
 	memcpy(pntr->path,mountpoint,MAX_PATH_LEN);
-	if(!((int(*)())fs->verify)(d)){
+	if(!fs->verify){
 		debug("VFS","Tried to mount device without the correct File System");
 		sv->nxt = NULL;
 		free(pntr);
@@ -28,6 +28,11 @@ fs_t *resolvFS(const char *path){
 }
 int open(const char *path,unsigned int f){
 	
+}
+dev_t *getATA(){
+	int kfd = kopen(getdevs(),"disk");
+	LinkedList *ll = llopen(kfd);
+	return (dev_t*)(((kfd_t*)ll->data)->data);
 }
 int vfs_init(){
 	int llfd = llnew();

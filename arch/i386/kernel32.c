@@ -1,3 +1,4 @@
+#include <fat.h>
 #include <vfs.h>
 #include <stdio.h>
 #include <libmem.h>
@@ -9,6 +10,15 @@
 #include <stdint.h>
 #include <tty.h>
 void bzero(void *buf,unsigned long n);
+unsigned long strlen(const char *str);
+int strcmp(const char *str,const char *s){
+	if(strlen(str) != strlen(s))
+		return -1;
+	for(int i = 0; i < strlen(s);i++)
+		if(s[i]!=str[i])
+			return i+1;
+	return 0;
+}
 int memcmp(const void *a,const void *b,unsigned long n){
 	for(int i = 0; i < n;i++)
 		if(*(uint8_t*)(a + i) != *(uint8_t*)(b + i))
@@ -127,8 +137,8 @@ void memcpy(void *dest,const void *src,unsigned long n){
 void panic(){
 	void *eip;
 	void *cs;
-	asm("movl 8(%esp),%eax");
-	asm("movl 12(%esp),%ebx");
+	asm("movl -4(%esp),%eax");
+	asm("movl 0(%esp),%ebx");
 	asm("mov %%eax,%0" :"=m"(eip));
 	asm("mov %%ebx,%0" : "=m"(cs));
 	puts("\n");
@@ -181,6 +191,10 @@ void _panic(const char *msg){
 	asm("cli");
 	asm("hlt");
 }
+int dev_llfd;
+int getdevs(){
+	return dev_llfd;
+}
 void main(){
 	unmap(1);
 	init_vidmem();
@@ -209,6 +223,8 @@ void main(){
 		puts("PS/2 Driver Initialization Successful\n");
 	}
 	int llfd = map_devs(ata);
+	dev_llfd = llfd;
+	puts("init vfs\n");
 	vfs_init();
 	puts("[Loader]Select root:\n");
 	int fd = kopen(llfd,"disk");
@@ -218,10 +234,27 @@ void main(){
 	}
 	int r = 0;
 	dev_t *dev = malloc(sizeof(*dev));
-	while(kread(fd,dev,sizeof(*dev))!= 0 ){
+	while(kiter(fd,dev,sizeof(*dev))!= 0 ){
 		puts(dev->name);
+		puts(":0x");
+		putx((uint32_t)dev);
 		puts("\n");
 	}
-	_panic("panic():nothing to do\n");	
+	char *pntr = gets();
+	int kfd = kopen(llfd,pntr);
+	if(kfd < 0){
+		_panic("failed to open device");
+	}
+	dev_t *d;
+	LinkedList *ll = llopen(kfd);
+	d = (((kfd_t*)(ll->data))->data);
+	fs_t *f = fat_init(d);
+#ifdef DEBUG
+	puts("fat_init(...)\n");
+#endif
+	if(!f || !f->verify){
+		puts("NOT FAT\n");
+	}
+	_panic("nothing to do\n");	
 	
 }
