@@ -1,15 +1,15 @@
 #ifndef __LIBELF_H
 #define __LIBELF_H
 # define ELF_NIDENT	16
-#include <stdint.h>
-typedef uint16_t Elf32_Half;	// Unsigned half int
-typedef uint32_t Elf32_Off;	// Unsigned offset
-typedef uint32_t Elf32_Addr;	// Unsigned address
-typedef uint32_t Elf32_Word;	// Unsigned int
-typedef int32_t  Elf32_Sword;	// Signed int
+//#include <stdint.h>
+typedef unsigned short Elf32_Half;	// Unsigned half int
+typedef unsigned int Elf32_Off;	// Unsigned offset
+typedef unsigned int Elf32_Addr;	// Unsigned address
+typedef unsigned int Elf32_Word;	// Unsigned int
+typedef int  Elf32_Sword;	// Signed int
 #define PT_LOAD 1
 typedef struct {
-	uint8_t		e_ident[ELF_NIDENT];
+	unsigned char	e_ident[ELF_NIDENT];
 	Elf32_Half	e_type;
 	Elf32_Half	e_machine;
 	Elf32_Word	e_version;

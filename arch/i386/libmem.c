@@ -112,12 +112,12 @@ void  libmem_init(){
 	uint32_t base = 0x00000000;
 	for(int i = 0;i < 1024;i++)
 		paget[i] = (i*4096) | 3;
-	base = 0x400000;
+	base = 0x000000;
 	uint32_t kpaget[1024] __attribute__((aligned(4096)));
 	for(int i = 0; i < 1024;i++)
 		kpaget[i] = base+(i*4096) | 3;
-	paged[1] = (uint32_t)kpaget | 3;
-	paged[0xC0400000/4096/1024] = (uint32_t) (kpaget) | 3;
+	paged[0] = (uint32_t)kpaget | 3;
+	paged[0xC0010000/4096/1024] = (uint32_t) (kpaget) | 3;
 	paged[0] = (uint32_t) (paget) | 3;
 	uint32_t paget2[1024] __attribute__((aligned(4096)));
 //	for(int i = 0; i < 1024;i++)
@@ -145,7 +145,14 @@ int abs(int i){
 }
 int page_mapped(void *addr){
 	unsigned long *pd = (unsigned long *)0xfffff000;
-	return pd[(uint32_t)addr>>22] != 2;
+ 	uint32_t pt = pd[(uint32_t)addr>>22];
+	uint32_t *pat = ((unsigned long *)0xFFC00000) + (0x400*((uint32_t)addr>>22));
+	if(pt == 2)
+		return 0;
+	if(pat[(unsigned int)addr >> 12 & 0x3ff] & 3)
+		return 1;
+	else
+		return 0;
 }
 void identp(void *_addr){
 	map_page(_addr,_addr);
@@ -185,16 +192,19 @@ int map_page(void *paddr,void *vaddr){
 	if(pd[pdindex] == 2){
 		uint32_t paget[1024]__attribute__((aligned(4096)));
 		for(int i = 0; i < 1024;i++)
-			paget[i] = ((uint32_t)paddr/1024/4096*1024*4096 + i*4096) | 3;
-		
+			paget[i] = (uint32_t)paddr/1024/4096*1024*4096 + i *4096 | 3;
 		pd[pdindex] = (uint32_t)paget | 3;
-		int i = 0;
+			int i = 0;
 		while(paddrArr[i] != 0)
 			i++;
 		paddrArr[i] = (uint32_t)paddr;
 		return 1;
+	}else{
+		uint32_t *paget = (uint32_t*)(0xffc00000) + (0x400*pdindex);
+		paget[ptindex] = ((uint32_t)paddr) | 3;
+		return 1;
 	}
-	return 0;
+
 }
 int inTab(int a){
 	for(int i = 0; i < 1024;i++)

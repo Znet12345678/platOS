@@ -195,21 +195,22 @@ int dev_llfd;
 int getdevs(){
 	return dev_llfd;
 }
+extern char *argv[];
 void main(){
+
+//	libmem_init();
 	unmap(1);
 	init_vidmem();
+	//*(uint16_t*) 0xa8000 = ' ';
+
 	puts("platOS Kernel ");
 	puts(KERNEL_IDENT);
 	puts("\n[Kernel Architecture:");
 	puts(KERNEL_ARCH);
 	puts(" Release: ");
 	puts(RELEASE);
-	puts("]\n");
-#ifdef EARLY_MEM_PROTECT
-	//libmem_init();
-#endif
+	puts("]\n");	
 	init_int();
-
 	ata_dev_t **ata = libata_init();
 	disable_stdcursor();
 

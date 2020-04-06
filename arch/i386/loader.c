@@ -31,7 +31,7 @@ int main(void *address){
 	}
 	void *basepntr = (void*)base;
 	uint32_t entry = hdr->e_entry;
-	__pre_init(basepntr);
+//	__pre_init(basepntr);
 	((void(*)())entry)();
 	while(1);
 }

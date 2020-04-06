@@ -17,8 +17,9 @@ void exception(int i){
 		asm("iret");
 	}
 	if(i == 0xd){
-		puts("General fault\n");
-		asm("iret");
+		panic("General fault\n");
+		
+		//		asm("iret");
 	}
 	if(i != 0xe){
 		puts("ERROR CODE ");

@@ -1,6 +1,8 @@
 [bits 16]
+global gdt
+global end
+global code
 gdt:
-a:
 null:dq 0
 code:dw 0xffff
 dw 0
@@ -20,8 +22,25 @@ db 0
 db 0b10010010
 db 0b11001111
 db 0
+esegment:dw 0xffff
+dw 0
+db 0
+db 0b10010010
+db 0b11001111
+db 0
+gsegment:dw 0xffff
+dw 0
+db 0
+db 0b10010010
+db 0b11001111
+db 0
+fsegment:dw 0xffff
+dw 0
+db 0
+db 0b10010010
+db 0b11001111
+db 0
 end:
 global gdtdesc32
-gdtdesc32: dw end-a-1
+gdtdesc32: dw end-gdt-1
 dd gdt
-
