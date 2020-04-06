@@ -8,97 +8,112 @@ int errflg = 0;
 int chkerr(){
 	return errflg;
 }
-void exception(int i){
-	errflg = 1;
-	if(i == 0xe){
-		uint32_t addr;
-		asm("mov %cr2,%eax");
-		asm("mov %%eax,%0" : "=m"(addr));
-		asm("iret");
-	}
-	if(i == 0xd){
-		panic("General fault\n");
-		
-		//		asm("iret");
-	}
-	if(i != 0xe){
-		puts("ERROR CODE ");
-
-		putx(i);
-		puts("\n");
-		panic("Exception Handler Not Implemented");
-	
-	}
+void exception(int i,uint32_t eip){
+	panic(eip);
 }
 asm("c:");
-void _exception(){
+void _exception(uint32_t err,uint32_t eip,uint32_t cs,uint32_t eflags){
+	asm("add $4,%ebp");
 asm("a:");
-	exception(0);
+	puts("[Exception]Divide by zero\n");
+	exception(0,eip+err);
 	asm("iret");
 asm("b:");
-	exception(1);
+	puts("[Exception]Debug\n");
+	exception(1,eip+cs);
 	asm("iret");
-	exception(2);
+	puts("[Exception]Non-maskable Interrupt\n");
+	exception(2,eip+err);
 	asm("iret");
-	exception(3);
+	puts("[Exception]Breakpoint\n");
+	exception(3,eip+err);
 	asm("iret");
-	exception(4);
+	puts("[Exception]Overflow\n");
+	exception(4,eip+err);
 	asm("iret");
-	exception(5);
+	puts("[Exception]Bound Range Exceeded\n");
+	exception(5,eip+err);
 	asm("iret");
-	exception(6);
+	puts("[Exception]Invalid Opcode\n");
+	exception(6,eip+err);
 	asm("iret");
-	exception(7);
+	puts("[Exception]Device Not Available\n");
+	exception(7,eip+err);
 	asm("iret");
-	exception(8);
+	puts("[Exception]Double fault\n");
+	exception(8,eip+err);
 	asm("iret");
-	exception(9);
+	puts("[Exception]Coprocessor Segment Overrun\n");
+	exception(9,eip+cs);
 	asm("iret");
-	exception(0xa);
+	puts("[Exception]Invalid TSS\n");
+	exception(0xa,eip+cs);
 	asm("iret");
-	exception(0xb);
+	puts("[Exception]Segment Not Present\n");
+	exception(0xb,eip+cs);
 	asm("iret");
-	exception(0xc);
+	puts("[Exception]Stack-Segment Fault\n");
+	exception(0xc,eip+cs);
 	asm("iret");
-	exception(0xd);
+	puts("[Exception]General Protection Fault\n");
+	exception(0xd,eip+cs);
 	asm("iret");
-	exception(0xe);
+	puts("[Exception]Page fault\n");
+	exception(0xe,eip+cs);
 	asm("iret");
-	exception(0xf);
+	puts("[Exception]Reserved\n");
+	exception(0xf,eip+cs);
 	asm("iret");
-	exception(0x10);
+	puts("[Exception]x87 Floating-Point Exception\n");
+	exception(0x10,eip+cs);
 	asm("iret");
-	exception(0x11);
+	puts("[Exception]Alignment Check\n");
+	exception(0x11,eip+err);
 	asm("iret");
-	exception(0x12);
+	puts("[Exception]Machine Check\n");
+	exception(0x12,eip+err);
 	asm("iret");
-	exception(0x13);
+	puts("[Exception]SIMD Floating-Point Exception\n");
+	exception(0x13,eip+cs);
 	asm("iret");
-	exception(0x14);
+	puts("[Exception]Virtualization Exception\n");
+	exception(0x14,eip+cs);
 	asm("iret");
-	exception(0x15);
+	puts("[Exception]Reserved\n");
+	exception(0x15,eip+cs);
 	asm("iret");
-	exception(0x16);
+	puts("[Exception]Reserved\n");
+	exception(0x16,eip+cs);
 	asm("iret");
-	exception(0x17);
+	puts("[Exception]Reserved\n");
+	exception(0x17,eip+cs);
 	asm("iret");
-	exception(0x18);
+	puts("[Exception]Reserved\n");
+	exception(0x18,eip+cs);
 	asm("iret");
-	exception(0x19);
+	puts("[Exception]Reserved\n");
+	exception(0x19,eip+cs);
 	asm("iret");
-	exception(0x1a);
+	puts("[Exception]Reserved\n");
+	exception(0x1a,eip+cs);
 	asm("iret");
-	exception(0x1b);
+	puts("[Exception]Reserved\n");
+	exception(0x1b,eip+cs);
 	asm("iret");
-	exception(0x1c);
+	puts("[Exception]Reserved\n");
+	exception(0x1c,eip+cs);
 	asm("iret");
-	exception(0x1d);
+	puts("[Exception]Reserved\n");
+	exception(0x1d,eip+cs);
 	asm("iret");
-	exception(0x1e);
+	puts("[Exception]Security\n");
+	exception(0x1e,eip+cs);
 	asm("iret");
-	exception(0x1f);
+	puts("[Exception]Reserved\n");
+	exception(0x1f,eip+cs);
 	asm("iret");
-	exception(0x20);
+	puts("[Exception]Exception Handler\n");
+	exception(0x20,eip+cs);
 	asm("iret");
 }
 void init_int(){

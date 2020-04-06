@@ -1,59 +1,47 @@
-size=1024
-LDR_CFILES = loader.c
-LDR_OFILES = loader.c.o _start.c.o multiboot.o libmem.c.o
-KERNEL_CFILES = kernel32.c llds.c  acpi.c initdev.c inter.c libmem.c vfs.c libata.c  ps2.c fat.c 
-KERNEL32_OFILES = kernel32.c.o llds.c.o acpi.c.o _start.o  initdev.c.o vfs.c.o multiboot.o inter.c.o fat.c.o libmem.c.o libata.c.o  ps2.c.o
-CFLAGS = -DKERNEL_IDENT=\"v0-ALPHA\" -DKERNEL_ARCH="\"i386(x86)\"" -DRELEASE="\"Protected DEBUG\"" -DDEBUG -DEARLY_MEM_PROTECT -Werror -g  
-all:
-	@rm -f *.o
-	i386-elf-gcc -c loader.c -o loader.o -Iinclude -ffreestanding -nostdlib
-	bcc -0   -c bcc_long.c -o bcc_long.o  -DL___idivu -DL___lcmpl -DL___ldivl -DL___lmodl -DL___ldivl -DL___landl 
-	bcc -0  -c  ldivmod.c -o ldivmod.o
-	nasm -f bin bs.asm -o bs.bin
-	nasm -f as86 putc.asm -o putc.o
-	nasm -f as86 goprot.asm -o goprot.o
-	nasm -f as86 gdt.asm -o gdt.o
-	nasm -f as86 chain.asm -o chain.o
-	nasm -f as86 start.asm -o start.o
-	qemu-img create padding.bin 32M
-	bcc -0   -ansi -Iinclude -c _start.c -o _start.c.o 
-	ld86 -T0x1000   -0 -7  -s chain.o _start.c.o start.o putc.o gdt.o goprot.o bcc_long.o ldivmod.o -o bs2.bin
-	ld86 -T0x1000 -0 chain.o _start.c.o start.o putc.o gdt.o goprot.o bcc_long.o ldivmod.o -o bs2.sym
-	dd if=bs.bin of=bootloader.bin seek=62 bs=1 conv=notrunc
-	dd if=bs2.bin of=bootloader.bin seek=1 bs=512 conv=notrunc
-	cat bs.bin bs2.bin padding.bin > bootloader.bin 
-#	@echo "(CC) _start.c.o"
-#	@i386-elf-gcc -c _start.c -o _start.c.o -nostdlib -ffreestanding -I. -Iinclude ${CFLAGS} --function-sections
-	@for file in ${KERNEL_CFILES} ;do \
-		echo "(CC) $$file" ; \
-		i386-elf-gcc -c $$file -o $$file.o -nostdlib -ffreestanding -I. -Iinclude ${CFLAGS}  ; \
-	    	done
-	@echo "(AS) multiboot.o"
-	@nasm -f elf multiboot.asm -o multiboot.o
-	@echo "(AS) _start.o"
-	@nasm -f elf _start.asm -o _start.o
-#	@echo "(LD) loader32.elf"
-#	@i386-elf-ld -Tllinker.ld ${LDR_OFILES} -o loader32.elf
-	@echo "(AS) cmdline.o"
-	@nasm -f elf cmdline.asm -o cmdline.o
-	@echo "(LD) kernel32.elf"
-	@i386-elf-ld -Tlinker32.ld ${KERNEL32_OFILES}  -o kernel32.sym -nostdlib
-	@cp kernel32.sym kernel32.elf
-	@echo "(STRIP) kernel32.elf"
-	@strip kernel32.elf
-	@echo "(GEN) kernel32.bin"
-	@i386-elf-gcc -c pre.c -o pre.o -nostdlib -Iinclude -Werror -ffreestanding
-	@i386-elf-gcc pre.o -o pre.elf -Tlinker.3.ld -nostdlib
-	@i386-elf-objcopy -O binary pre.elf pre.bin
-#	@echo $((512 - $(shell stat -L -c %s pre.bin))
-	@dd if=/dev/zero of=padding.2.bin bs=1 count=$$(($(size) - $(shell stat -L -c %s pre.bin)))
-	@cat pre.bin padding.2.bin kernel32.elf > kernel32.bin
-#	@i386-elf-objcopy -O binary kernel32.elf KERNEL.BIN
-#	@i386-elf-objcopy --only-keep-debug kernel32.elf kernel32.sym
-#	@echo "(GEN) kernel32.bin"
-#	@cat loader32.elf kernel32.elf > kernel32.bin
-bootloader:
-	nasm -f bin bs.asm -o bs.o
+DEPS=include/* Makefile
+CC=i386-elf-gcc
+CC16=bcc
+AS16=nasm -f as86
+ASBIN=nasm -f bin
+AS=nasm -f elf
 
+IMAGETOOL=qemu-img
+DD=dd
+CFLAGS=-nostdlib -Iinclude -ffreestanding -DKERNEL_IDENT=\"v0-Alpha\" -DKERNEL_ARCH="\"i386(x86)\"" -DRELEASE="\"DEBUG\"" -DEARLY_MEM_PROTECT 
+LDFLAGS=-nostdlib -Tlinker32.ld
+all: Makefile bootloader.bin
+kernel: kernel32.elf 
+bootloader.bin: kernel32.elf bs.bin padding o16 bs2.bin
+	$(IMAGETOOL) create tail.img 32M
+	cat bs.bin bs2.bin tail.img > bootloader.bin
+	cat pre.bin padding.bin kernel32.elf > kernel32.bin
+kernel32.elf.of: Makefile kernel32.o llds.o acpi.o __start.o initdev.o vfs.o multiboot.o inter.o fat.o libmem.o libata.o ps2.o
+kernel32.elf: kernel32.elf.of kernel32
+%.o: %.c $(DEPS) 
+	$(CC) -c -o $@ $< $(CFLAGS)
+%.o: %.asm $(DEPS)
+	$(AS) $< -o $@
+o16: bs.bin putc.o16 goprot.o16 gdt.o16 chain.o16 start.o16 _start.aout ldivmod.aout bcc_long.aout loader.o32
+%.o32: %.asm $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+%.bin: %.asm $(DEPS)
+	$(ASBIN) $< -o $@
+%.o16: %.asm 
+	$(AS16) $< -o $@
+bs2.bin:
+	ld86 -T0x1000 -0 -7 -s *.o16 *.aout -o bs2.bin
+%.aout: %.c $(DEPS) Makefile
+	$(CC16) -ansi -0 -7 -c -o $@ $< -Iinclude -DL___idivu -DL___lcmpl -DL___ldivl -DL___lmodl -DL___ldivl -DL___landl
+kernel32.bin: padding kernel32
+padding: kernel32.elf
+	cp kernel32.elf kernel32.sym
+	strip kernel32.elf
+	i386-elf-gcc -c pre.c -o pre.oelf -nostdlib -Iinclude -Werror -ffreestanding
+	i386-elf-gcc pre.oelf -o pre.elf -Tlinker.3.ld -nostdlib
+	i386-elf-objcopy -O binary pre.elf pre.bin
+	gcc createpad.c -o createpad
+	./createpad pre.bin padding.bin
+kernel32: kernel32.elf.of
+	$(CC) $(LDFLAGS) $(CFLAGS) *.o -o kernel32.elf
 clean:
-	rm -f *.BIN *.ELF *.aout *.o *.img* *.a *.so*  *.1 *.SYS* *.elf *.bin *.sym
+	rm -f createpad *.o32 *.o *.o16 *.bin *.a *.BIN *.ELF *.aout *.img *.so *.SYS *.elf *.sym

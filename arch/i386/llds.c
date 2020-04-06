@@ -31,7 +31,7 @@ int llnew(){
 
 		int v = map_page(buf,(void*)LLLOC);
 		if(!v)
-			panic("Failed to allocate critical page");
+			_panic("Failed to allocate critical page");
 #ifdef DEBUG
 		puts("mapped page ");
 		putx((uint32_t)allocFree());

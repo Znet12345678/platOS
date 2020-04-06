@@ -30,7 +30,7 @@ struct RSDPDescriptor *findRSDP(){
 			return pntr;
 		pntr = (struct RSDPDescriptor *)((uint8_t*)pntr + 0x10);
 		if(pntr > (struct RSDPDescriptor *)BIOS_END)
-			panic("Failed to init ACPI\n");
+			_panic("Failed to init ACPI\n");
 	}
 	return 0;
 }

@@ -92,7 +92,7 @@ void free(void *pntr){
 		putx((uint32_t)pntr);
 		puts("\nAlloc status:");
 		puti(_pntr->alloc);
-		panic("\nDOUBLE FREE EXCEPTION!\n");
+		_panic("\nDOUBLE FREE EXCEPTION!\n");
 	
 	}
 	bzero((uint8_t*)pntr,*(uint32_t*)((uint8_t*)pntr-sizeof(*_pntr)+1));

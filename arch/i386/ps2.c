@@ -55,7 +55,7 @@ int lock = 0;
 int caps = 0;
 char ps2_getc(){
 	if(!init){
-		panic("PS/2 driver not initialized but has been called. Refusing to countinue!\n\0");
+		_panic("PS/2 driver not initialized but has been called. Refusing to countinue!\n\0");
 //		return 0;
 	}
 	while(!(inb(PS2_STATUS) & 1));
@@ -79,7 +79,7 @@ a:;	while(!(inb(PS2_STATUS) & 1));
 }
 int stdin_read(void *buf,int offset,int count){		//Ignores offset
 	if(!init){
-		panic("8042 PS/2 driver not initialized but has been called. Refusing to continue!\n\0"); 
+		_panic("8042 PS/2 driver not initialized but has been called. Refusing to continue!\n\0"); 
 	}
 	int i = 0;
 	while(i < count){

@@ -2,6 +2,8 @@
 #define __STDLIB_H
 #define NULL 0
 #include <libmem.h>
+#include <stdint.h>
+void panic(uint32_t eip);
 void *malloc(unsigned long n);
 int page_mapped(void *addr);
 void identp(void *addr);

@@ -1,6 +1,3 @@
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <libelf.h>
 void debug(const char *msg,const char *msg2){
