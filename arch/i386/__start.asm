@@ -6,7 +6,7 @@ extern code_end
 extern libmem_init
 extern main
 _start:
-mov esp,0xffff
+mov esp,0x40000
 push ebp
 mov ebp,esp
 call libmem_init

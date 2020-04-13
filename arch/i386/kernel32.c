@@ -135,15 +135,11 @@ void memcpy(void *dest,const void *src,unsigned long n){
 		bdest[i] = bsrc[i];
 }
 void panic(uint32_t ip){
-	void *eip;
-	void *cs;
 //	asm("movl -4(%esp),%eax");
 //	asm("movl 0(%esp),%ebx");
 //	asm("mov %%eax,%0" :"=m"(eip));
 //	asm("mov %%ebx,%0" : "=m"(cs));
 	puts("\n");
-	for(int i = 0; i < 80;i++)
-		putc('#');
 	puts("->0x");
 	putx(ip);
 	puts("\n");
