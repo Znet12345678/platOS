@@ -1,5 +1,5 @@
 [bits 16]
-[org 0x7c00]
+[org 0x7c24]
 s:xor ax,ax
 
 mov es,ax
@@ -20,5 +20,4 @@ jmp bx
 err:
 jmp err
 
-times 510 - ($ - $$) db 0
-dw 0xaa55
+

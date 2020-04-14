@@ -1,7 +1,6 @@
 #ifndef __LIBIO_H
 #define __LIBIO_H
 #include <stdint.h>
-#include <libio.h>
 static inline void outb(uint16_t port, uint8_t val)
 {
     asm volatile ( "outb %0, %1" : : "a"(val), "Nd"(port) );
@@ -27,9 +26,7 @@ static inline uint16_t inw(uint16_t port)
                    : "Nd"(port) );
     return ret;
 }
-unsigned long strlen(const char *str);
-void memcpy(void *dest,const void *src,unsigned long n);
-void strcpy(char *dest,const char *src);
+
 void puts(const char *str);
 void putc(uint8_t c);
 void puti(int i);

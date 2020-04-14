@@ -45,6 +45,7 @@ struct __fat_extBS_32{
 	uint8_t vtl[8];
 }__attribute__((packed));
 fs_t *fat_init(dev_t*fat_part);
+	
 int __fat12_read(int fd,void *buf, unsigned long n);
 int __fat16_read(int fd,void *buf, unsigned long n);
 int __fat32_read(int fd,void *buf, unsigned long n);

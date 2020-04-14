@@ -45,9 +45,9 @@ typedef struct fat_extBS_32
 	unsigned int 		volume_id;
 	unsigned char		volume_label[11];
 	unsigned char		fat_type_label[8];
- 
+
 }  fat_extBS_32_t;
- 
+
 typedef struct fat_extBS_16
 {
 	//extended fat12 and fat16 stuff
@@ -57,9 +57,9 @@ typedef struct fat_extBS_16
 	unsigned int		volume_id;
 	unsigned char		volume_label[11];
 	unsigned char		fat_type_label[8];
- 
+
 } fat_extBS_16_t;
- 
+
 typedef struct fat_BS
 {
 	unsigned char 		bootjmp[3];
@@ -76,10 +76,10 @@ typedef struct fat_BS
 	unsigned short		head_side_count;
 	unsigned int 		hidden_sector_count;
 	unsigned int 		total_sectors_32;
- 
+
 	//this will be cast to it's specific type once the driver actually knows what type of FAT this is.
 	unsigned char		extended_section[54];
- 
+
 }  fat_BS_t;
 struct dap{
 	unsigned char size;
@@ -116,10 +116,10 @@ void ata_reads(buf,lba,n,seg){
 	_ata_read(rs,0,1,0);
 	while(i < 4){
 		struct parttab *pt = (struct parttab *)(rs + i*0x10 + 0x1be);
-//		puts(".");	
+		//		puts(".");	
 		if((pt->attr >> 7) & 1){
 			_ata_read(buf,(unsigned int)(lba+pt->lba),n,seg);
-	//		putx(lba+pt->lba);		
+			//		putx(lba+pt->lba);		
 			data = pt->lba;
 			return;
 		}
@@ -130,7 +130,7 @@ void ata_reads(buf,lba,n,seg){
 	_ata_read(buf,(unsigned int)(lba),n,seg);
 }
 void ata_read_hi(buf,lba,n){
-	ata_reads(buf,lba,n,0x1000);
+	ata_reads(buf,lba,n,0x2000);
 }
 void ata_read(buf,lba,n){
 	ata_reads(buf,lba,n,0);
@@ -146,23 +146,23 @@ void putx(n){
 }
 
 /*void _ata_read(buf,lba,n){
-	struct dap d;
-	unsigned int b;
-	d.size = 0x10;
-	d.zero = 0;
-	d.sectors=n;
-	d.offset = buf;
-	d.segment = 0x1000;
-	d.startsh = lba >> 32;
-	d.startsl = lba & 0xffffffff;
-	b = (unsigned int)buf;
+  struct dap d;
+  unsigned int b;
+  d.size = 0x10;
+  d.zero = 0;
+  d.sectors=n;
+  d.offset = buf;
+  d.segment = 0x1000;
+  d.startsh = lba >> 32;
+  d.startsl = lba & 0xffffffff;
+  b = (unsigned int)buf;
 //	putx(buf);
 //	putc(' ');
 //	putx(lba);
 //	putc(' ');
 //	putx(n);
 //	putx(*(unsigned char*)0x9000)
-	inter(d);
+inter(d);
 }*/
 
 void puts(pntr){
@@ -220,6 +220,7 @@ void main(){
 		unsigned char name[12];
 		unsigned int read = 0;
 		puts("FAT16->");
+
 		spc = *((unsigned char *)buf + 0x0d);
 		first_root_dir_sector = first_data_sector - root_dir_sectors;
 		puts("a");
@@ -231,103 +232,103 @@ void main(){
 		goto a;
 		v = l16;
 b:;       	fat_offset = v * 2;
-		fat_sector = first_fat_sector + (fat_offset/512);
-		ata_read(FAT_table,fat_sector,1);
-		ent_offset = fat_offset % 512;
-		table_value = *(unsigned short *)&FAT_table[ent_offset];
+  fat_sector = first_fat_sector + (fat_offset/512);
+  ata_read(FAT_table,fat_sector,1);
+  ent_offset = fat_offset % 512;
+  table_value = *(unsigned short *)&FAT_table[ent_offset];
 
-		if(table_value >= 0xFFF8){
-			puts("table_value->");
-			err();
-		}
-		if(table_value == 0xfff7){
-			puts("table_value->");
-			err();
-		}
-		first_sector_of_cluster = ((table_value-2)*fat_boot->sectors_per_cluster)+ first_data_sector;
-		ata_read(sbuf,first_sector_of_cluster,spc);
-		read = 0;
+  if(table_value >= 0xFFF8){
+	  puts("table_value->");
+	  err();
+  }
+  if(table_value == 0xfff7){
+	  puts("table_value->");
+	  err();
+  }
+  first_sector_of_cluster = ((table_value-2)*fat_boot->sectors_per_cluster)+ first_data_sector;
+  ata_read(sbuf,first_sector_of_cluster,spc);
+  read = 0;
 a:;
- 		//puts(sbuf);
+  //puts(sbuf);
   //		putx(first_data_sector);
-		if(read > spc*512){
-			v = l16;
-			goto b;
-		}
-		
-		if(sbuf[0] == 0){
+  if(read > spc*512){
+	  v = l16;
+	  goto b;
+  }
 
-			puts("EOF->");
-			err();
-		}
+  if(sbuf[0] == 0){
 
-		if(sbuf[0]  == 0xe5){
-			sbuf+=0x20;
-			read+=0x20;
-			goto a;
-		}
-		if(sbuf[11] == 0x0f){
-			sbuf+=0x20;
-			read+=0x20;
-			goto a;
-		}
-		memcpy(name,sbuf,12);
-//		putx(fat_boot->table_count);
-		//puts(name);	
-		if(strcmp(name,"KERNEL32BIN \0") == 0){
-			unsigned char *tbuf,*head;
-			tbuf = 0x00;
-			head = tbuf;
-			v = *(unsigned short*)&sbuf[26];
-			table_value = v;
-			//putx(v);
-			puts("Loading Kernel");
-			goto d;
+	  puts("EOF->");
+	  err();
+  }
+
+  if(sbuf[0]  == 0xe5){
+	  sbuf+=0x20;
+	  read+=0x20;
+	  goto a;
+  }
+  if(sbuf[11] == 0x0f){
+	  sbuf+=0x20;
+	  read+=0x20;
+	  goto a;
+  }
+  memcpy(name,sbuf,12);
+  //		putx(fat_boot->table_count);
+  //puts(name);	
+  if(strcmp(name,"KERNEL32BIN \0") == 0){
+	  unsigned char *tbuf,*head;
+	  tbuf = 0x1000;
+	  head = tbuf;
+	  v = *(unsigned short*)&sbuf[26];
+	  table_value = v;
+	  //putx(v);
+	  puts("Loading Kernel");
+	  goto d;
 c:;			fat_offset=v*2;
-  			putc('.');
-			fat_sector = first_fat_sector+(fat_offset/512);
-			ent_offset = fat_offset%512;	
-//			putx(ent_offset);
-//			putx(*(unsigned int *)tbuf);		
-			ata_read(FAT_table,fat_sector,1);
-			table_value = *(unsigned short *)&FAT_table[ent_offset];
-		//	putx(table_value);
-			v = table_value;
-			
-			if(table_value >= 0xfff7){	
-				puts("Entering protected mode");
-				
-		
-				go_prot32();
-				
-			}
+  putc('.');
+  fat_sector = first_fat_sector+(fat_offset/512);
+  ent_offset = fat_offset%512;	
+  //			putx(ent_offset);
+  //			putx(*(unsigned int *)tbuf);		
+  ata_read(FAT_table,fat_sector,1);
+  table_value = *(unsigned short *)&FAT_table[ent_offset];
+  //	putx(table_value);
+  v = table_value;
+
+  if(table_value >= 0xfff7){	
+	  puts("Entering protected mode");
+
+
+	  go_prot32();
+
+  }
 d:;
-		putx(tbuf);
- 		 ata_read_hi(tbuf,((table_value-2)*spc)+first_data_sector,spc);
-		 //		putx(*tbuf);
- // 		putx(((table_value-2)*fat_boot->sectors_per_cluster)+first_data_sector);
-		//	putx(spc);	
-//  tbuf+=fat_boot->sectors_per_cluster*512;
-		//	puts("!");
-//			putx(table_value);
-		//	putx(tbuf);
+  putx(tbuf);
+  ata_read_hi(tbuf,((table_value-2)*spc)+first_data_sector,spc);
+  //		putx(*tbuf);
+  // 		putx(((table_value-2)*fat_boot->sectors_per_cluster)+first_data_sector);
+  //	putx(spc);	
+  //  tbuf+=fat_boot->sectors_per_cluster*512;
+  //	puts("!");
+  //			putx(table_value);
+  //	putx(tbuf);
 
-			tbuf+=512*spc;
-		  goto c;
-		
+  tbuf+=512*spc;
+  goto c;
 
-		}else{
-			sbuf+=0x20;
-			read+=0x20;
-			goto a;
-		}
+
+  }else{
+	  sbuf+=0x20;
+	  read+=0x20;
+	  goto a;
+  }
 
 
 	}else if(total_clusters < 268435445){
 		putx(total_clusters);
 	}
 	else{
-	
+
 	}
 	puts("Fell off the edge");
 	err();

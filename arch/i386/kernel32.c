@@ -9,6 +9,7 @@
 #include <libio.h>
 #include <stdint.h>
 #include <tty.h>
+#include "strtok_r.h"
 void bzero(void *buf,unsigned long n);
 unsigned long strlen(const char *str);
 int strcmp(const char *str,const char *s){
@@ -244,6 +245,10 @@ void main(){
 	if(!f || !f->verify){
 		puts("NOT FAT\n");
 	}
+	char *strtest = malloc(1024);
+	strcpy(strtest,"Test string 1\n");
+	char **saveptr = malloc(sizeof(*saveptr)*3);
+	
 	_panic("nothing to do\n");	
 	
 }

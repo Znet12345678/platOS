@@ -16,6 +16,7 @@ typedef struct dev{
 	uint32_t clustersize;//Size of cluster e.g. 512 bytes for sector
 	int *read;//read count bytes at offset into device to buf
 	int *write;//Write count bytes to offset of buf
+	short fs_type;
 	void *dataPntr;
 	struct dev *nxt;
 }__attribute__((packed)) dev_t;

@@ -1,3 +1,5 @@
+#include <fs.h>
+#include <string.h>
 #include <vfs.h>
 #include <fat.h>
 #include <stdlib.h>
@@ -6,13 +8,14 @@
 #ifdef MODULE_BUILD
 #include <module.h>
 REGISTER(__fat_init)
-REGISTER(__fat12_read);
-REGISTER(__fat16_read);
-REGISTER(__fat32_read);
-REGISTER(__fat12_write);
-REGISTER(__fat16_write);
-REGISTER(__fat32_write);
+REGISTER(stub);
+REGISTER(stub);
+REGISTER(stub);
+REGISTER(stub);
+REGISTER(stub);
+REGISTER(stub);
 #endif
+extern int stub();
 unsigned int active_cluster;
 unsigned int first_fat_sector;
 unsigned int fat_offset;
@@ -67,29 +70,32 @@ fs_t *fat_init(dev_t *fpart){
 	fs_t *ret = malloc(sizeof(*ret));
 	if(bits == 12){
 		debug("fat_init","FAT12");
-		ret->read =(int*) __fat12_read;
-		ret->write = (int*)__fat12_write;
-		ret->open = (int*)__fat12_open;
-		ret->lseek = (int*)__fat12_lseek;
+		ret->read =(int*) stub;
+		ret->write = (int*)stub;
+		ret->open = (int*)stub;
+		ret->lseek = (int*)stub;
 		ret->verify = 1;
+		fpart->fs_type = FAT12;
 		return ret;
 	}
 	if(bits == 16){
 		debug("fat_init","FAT16");
-		ret->read = (int*)__fat16_read;
-		ret->write = (int*)__fat16_write;
-		ret->open = (int*)__fat16_open;
-		ret->lseek = (int*)__fat16_lseek;
+		ret->read = (int*)stub;
+		ret->write = (int*)stub;
+		ret->open = (int*)stub;
+		ret->lseek = (int*)stub;
 		ret->verify = 1;
+		fpart->fs_type = FAT16;
 		return ret;
 	}
 	if(bits == 32){
 		debug("fat_init","FAT32");
-		ret->read = (int*)__fat32_read;
-		ret->write = (int*)__fat32_write;
-		ret->open = (int*)__fat32_open;
-		ret->lseek = (int*)__fat32_lseek;
+		ret->read = (int*)stub;
+		ret->write = (int*)stub;
+		ret->open = (int*)stub;
+		ret->lseek = (int*)stub;
 		ret->verify = 1;
+		fpart->fs_type = FAT32;
 		return ret;
 	}
 	ret->read = NULL;
@@ -97,45 +103,11 @@ fs_t *fat_init(dev_t *fpart){
 	ret->open = NULL;
 	ret->lseek = NULL;
 	ret->verify = 0;
+	fpart->fs_type = FS_NONE;
 	return ret;
 }
 uint32_t rootDirLba(){
 	
 }
 
-int __fat12_read(int fd,void *buf, unsigned long n){
-	
-}
-int __fat16_read(int fd,void *buf, unsigned long n){
 
-}
-int __fat32_read(int fd,void *buf, unsigned long n){
-
-}
-int __fat12_write(int fd,void *buf, unsigned long n){
-
-}
-int __fat16_write(int fd,void *buf, unsigned long n){
-
-}
-int __fat32_write(int fd,void *buf, unsigned long n){
-
-}
-int __fat12_open(const char *path,unsigned flags){
-
-}
-int __fat16_open(const char *path,unsigned flags){
-
-}
-int __fat32_open(const char *path,unsigned flags){
-
-}
-int __fat12_lseek(int fd,unsigned long pos,unsigned fl){
-
-}
-int __fat16_lseek(int fd,unsigned long pos,unsigned fl){
-
-}
-int __fat32_lseek(int fd,unsigned long pos,unsigned fl){
-
-}

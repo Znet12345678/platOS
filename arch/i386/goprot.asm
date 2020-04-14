@@ -37,7 +37,7 @@ mov fs,eax
 mov esp,0xa00000
 mov ebp,esp
 
-jmp 0x8:0x10000
+jmp 0x8:0x21000
 ;mov word [0xb8000],'A'
 h:jmp h
 

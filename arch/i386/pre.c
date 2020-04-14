@@ -13,8 +13,8 @@ void put(char c){
 	*(uint16_t*)0xb8000 = c;
 }
 int _start(){
-	Elf32_Ehdr *hdr = (Elf32_Ehdr *)0x10400;
-	Elf32_Phdr *phdr = (Elf32_Phdr *)(0x10400 + hdr->e_phoff);
+	Elf32_Ehdr *hdr = (Elf32_Ehdr *)0x21400;
+	Elf32_Phdr *phdr = (Elf32_Phdr *)(0x21400 + hdr->e_phoff);
 	for(int i = 0; i < hdr->e_phnum;i++){
 		if(phdr[i].p_type == PT_LOAD){
 			bzero((void*)phdr[i].p_paddr,phdr[i].p_memsz);
