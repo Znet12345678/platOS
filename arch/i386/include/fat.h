@@ -7,7 +7,7 @@
 #include <stdint.h>
 typedef struct __fat_bpb{
 	uint8_t jmp[3];
-	uint64_t oem;
+	uint8_t oem[8];
 	uint16_t bps;
 	uint8_t spc;
 	uint16_t numResv;

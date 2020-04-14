@@ -130,6 +130,7 @@ int ata_read24(uint16_t port,uint8_t slave,void *buf,unsigned int lba,unsigned i
 	puts(",0x");
 	putx(n);
 	puts(")\n");
+	int ns = n;
 	unsigned int offset = 0;
 	while(n > 0){
 		_delay();
@@ -141,10 +142,12 @@ int ata_read24(uint16_t port,uint8_t slave,void *buf,unsigned int lba,unsigned i
 			*((uint16_t*)buf + offset) = inw(port);
 		n--;
 	}
+	return ns;
 }
 int ata_write24(uint16_t port,uint8_t slave,void *buf,unsigned int lba,unsigned int n){
 	ata_generic24(port,slave == 0xa0 ? 0xe0 : 0xf0,lba,n,0x30);
 	unsigned int offset = 0;
+	int ns = n;
 	while(n > 0){
 		_delay();
 		int chk = poll(port);
@@ -159,6 +162,7 @@ int ata_write24(uint16_t port,uint8_t slave,void *buf,unsigned int lba,unsigned 
 		uint8_t val = inb(port+STATUS_OFFSET);
 		while(val & 0x80)val = inb(port+STATUS_OFFSET);
 	}
+	return ns;
 }
 void ata_generic48(uint16_t port,uint8_t slave,unsigned long lba, unsigned short sc,unsigned int cmd){
 	outb(port+6,slave);

@@ -1,3 +1,4 @@
+#include <libata.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <vfs.h>
@@ -159,11 +160,13 @@ int kiter(int llfd,void *buf,unsigned long n){
 	return i;
 }
 
-int ATADEVREAD(struct dev *d,void *buf,unsigned int offset,unsigned int nb){
-	return ((int (*)())d->read)(((ata_dev_t*)d->dataPntr)->ioaddr,((ata_dev_t*)d->dataPntr)->slavebyte,d->begin+offset/d->clustersize,nb%d->clustersize == 0 ? nb/d->clustersize:nb/d->clustersize+1);
+int ATADEVREAD(struct dev *d,void *buf,unsigned int offset,unsigned int nb)
+{
+	
+	return ((int (*)())getATA()->read)(((ata_dev_t*)d->dataPntr)->ioaddr,((ata_dev_t*)d->dataPntr)->slavebyte,buf,d->begin+offset/d->clustersize,nb%d->clustersize == 0 ? nb/d->clustersize:nb/d->clustersize+1)*d->clustersize;
 }
 int ATADEVWRITE(struct dev *d,void *buf,unsigned int offset,unsigned int nb){
-	return ((int (*)())d->write)(((ata_dev_t*)d->dataPntr)->ioaddr,((ata_dev_t*)d->dataPntr)->slavebyte,d->begin+offset/d->clustersize,nb%d->clustersize==0?nb/d->clustersize:nb/d->clustersize+1);
+	return ((int (*)())getATA()->write)(((ata_dev_t*)d->dataPntr)->ioaddr,((ata_dev_t*)d->dataPntr)->slavebyte,buf,d->begin+offset/d->clustersize,nb%d->clustersize==0?nb/d->clustersize:nb/d->clustersize+1) *d->clustersize;
 }
 int GPT(struct dev *ata,struct dev *ataparts,struct ata_dev *lst,struct partEnt *ent);
 void diskPartProbe(struct dev *ata,struct dev *ataparts,ata_dev_t **lst){

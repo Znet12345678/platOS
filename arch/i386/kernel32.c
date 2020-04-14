@@ -153,21 +153,13 @@ void panic(uint32_t ip){
 }
 
 void putx(unsigned long n){
-	char arr[xlen(n)+1];
-	bzero(arr,xlen(n)+1);
-	int i = 0;
-	if(n == 0){
-		puts("0");
-		return;
+	for(int i = 28; i >= 0;i-=4){
+		char c = (n >> i) & 0xf;
+	       	if(c > 9)
+			putc(c-10+'A');
+		else
+			putc(c+'0');	
 	}
-	int size = xlen(n);
-	while(size-i-1 >= 0){
-		arr[size-i-1]=n%16 < 10 ? n%16+'0' : n%16-10+'A';
-		n/=16;
-		i++;
-	}
-	for(int i = 0; i < size;i++)
-		putc(arr[i]);
 
 }
 void debug(const char *task,const char *msg){

@@ -21,7 +21,7 @@ kernel32.elf: kernel32.elf.of kernel32
 	$(CC) -c -o $@ $< $(CFLAGS)
 %.o: %.asm $(DEPS)
 	$(AS) $< -o $@
-o16: bs.bin putc.o16 goprot.o16 gdt.o16 chain.o16 start.o16 _start.aout ldivmod.aout bcc_long.aout loader.o32
+o16: bs.bin putc.o16 goprot.o16 gdt.o16 chain.o16 start.o16 _start.aout ldivmod.aout bcc_long.aout 
 %.o32: %.asm $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 %.bin: %.asm $(DEPS)
