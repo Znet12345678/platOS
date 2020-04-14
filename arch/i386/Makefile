@@ -33,7 +33,7 @@ o16: bs.bin putc.o16 goprot.o16 gdt.o16 chain.o16 start.o16 _start.aout ldivmod.
 	$(ASBIN) $< -o $@
 %.o16: %.asm 
 	$(AS16) $< -o $@
-bs2.bin: *.o16 *.aout
+bs2.bin: o16 
 	ld86 -T0x1000 -0 -7 -s *.o16 *.aout -o bs2.bin
 %.aout: %.c $(DEPS) Makefile
 	$(CC16) -ansi -0 -7 -c -o $@ $< -Iinclude -DL___idivu -DL___lcmpl -DL___ldivl -DL___lmodl -DL___ldivl -DL___landl
