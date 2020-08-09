@@ -129,19 +129,21 @@ int ata_read24(uint16_t port,uint8_t slave,void *buf,unsigned int lba,unsigned i
 	putx(lba);
 	puts(",0x");
 	putx(n);
-	puts(")\n");
+	puts(")");
 	int ns = n;
 	unsigned int offset = 0;
 	while(n > 0){
 		_delay();
 		int chk = poll(port);
 		if(chk < 0){
+			puts("->failed\n");
 			return -1;
 		}
 		for(int i = 0; i < 256;i++,offset++)
 			*((uint16_t*)buf + offset) = inw(port);
 		n--;
 	}
+	puts("->done\n");
 	return ns;
 }
 int ata_write24(uint16_t port,uint8_t slave,void *buf,unsigned int lba,unsigned int n){

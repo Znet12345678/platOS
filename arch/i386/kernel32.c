@@ -1,3 +1,6 @@
+#include <string.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <fat.h>
 #include <vfs.h>
 #include <stdio.h>
@@ -43,7 +46,7 @@ void disable_stdcursor(){
 	asm("out %al,%dx");
 }
 int x = 0,y = 0;
-uint16_t *vgabase = (uint16_t*)0xb8000;
+uint16_t *vgabase = (uint16_t*)0xa0000;
 
 
 void putc(uint8_t c){
@@ -51,24 +54,32 @@ void putc(uint8_t c){
 		return;
 	ccolor = (VGA_COLOR_BLACK << 4 | VGA_COLOR_LIGHT_GREY);
 	if(c != '\n'){
-		*((uint16_t*)0xb8000 + y*80+x) = c | (ccolor << 8);
-		*((uint16_t*)0xb8000 + y*80+x+1) = ' ' | VGA_COLOR_LIGHT_GREY << 12;
-		x++;
+		for(int i = 0; i < 8; i++){
+			for(int j = 0; j < 8;j++){
+				if((font8x8_basic[c][i] >> j) & 1){
+					*(char*)(0xa0000 + x+j + (y+i)*320)=0xf;
+				}
+			}
+		}
+		x+=8;
 	}
-	if(x >= 80 || c == '\n'){
-		*((uint16_t*)0xb8000 + y * 80 + x ) = 0;
+	if(x >= 320 || c == '\n'){
 //		*((uint16_t*)0xb8000 + y * 80 + x + 1) = 0;
-		y++;
-		x = 0;
+		y+=8;
+		x=0;
 	}
-	if(y >= 25){
-		for(int i = 0; i < 80*25;i++)
-			*((uint16_t*)0xb8000 + i) = *(uint16_t*)((uint16_t*)0xb8000 + i + 80);
-		y--;
+	if(y >= 200){
+		for(int i = 0; i < 320*292;i++)
+			*((uint8_t*)0xa0000 + i) = *(uint8_t*)((uint8_t*)0xa0000 + i + 320*8);
+		for(int i = 472*640;i < 480*640;i++)
+			*((uint8_t*)0xa0000 + i) = 0;
+		y-=8;
+		x=0;
 	}
 	if(x == 0){
 		*((uint16_t*)0xb8000+y*80+x) = ' ' | VGA_COLOR_LIGHT_GREY << 12;
 	}
+
 }
 int intlen(unsigned int n){
 	int ret = 0;
@@ -152,7 +163,45 @@ void panic(uint32_t ip){
 		asm("hlt");
 	}
 }
-
+char lower(char upper){
+	if(upper >= 'A' && upper <= 'Z')
+		return upper+0x20;
+}
+int atox(const char *str){
+	if(strncmp(str,"0x",2) == 0)
+		str+=2;
+	int ret = 0;
+	int multiplier = 1;
+	for(int i = strlen(str)-1; i >= 0;i--,multiplier*=16){
+		int val = str[i] >= '0' && str[i] <= '9' ? str[i]-'0' : (lower(str[i])-'a'+10);
+		ret+=val*multiplier;
+	}
+	return ret;
+}
+int strncmp(const char *s1,const char *s2,size_t n){
+	for(int i = 0; i < n;i++)
+		if(s1[i] != s2[i])
+			return -1;
+	return 0;
+}
+void dbg(){
+	while(1){
+		puts("\n(DBG)");
+		char *str = gets();
+		char **saveptr = malloc(strlen(str)*sizeof(*saveptr));
+		char *tok = strtok_r(str," ",saveptr);
+		if(strcmp(tok,"x") == 0){
+			puts("\n");
+			putx(*(uint32_t*)atox(strtok_r(NULL," ",saveptr)));
+		}
+		else if(strcmp(tok,"q") == 0)
+			break;
+		else if(strcmp(tok,"j") == 0){
+			void (*func)() = (void(*)())atox(strtok_r(NULL," ",saveptr));
+			func();
+		}
+	}
+}
 void putx(unsigned long n){
 	for(int i = 28; i >= 0;i-=4){
 		char c = (n >> i) & 0xf;
@@ -185,6 +234,7 @@ int getdevs(){
 	return dev_llfd;
 }
 extern char *argv[];
+int mountllfd;
 void main(){
 
 //	libmem_init();
@@ -202,7 +252,6 @@ void main(){
 	init_int();
 	ata_dev_t **ata = libata_init();
 	disable_stdcursor();
-
 	int res = ps2_init();
 	if(!res){
 		puts("ps2 failed\n");
@@ -212,6 +261,8 @@ void main(){
 	else{
 		puts("PS/2 Driver Initialization Successful\n");
 	}
+
+	puts("Mapping devices...\n");
 	int llfd = map_devs(ata);
 	dev_llfd = llfd;
 	puts("init vfs\n");
@@ -233,6 +284,9 @@ void main(){
 	char *pntr = gets();
 	int kfd = kopen(llfd,pntr);
 	if(kfd < 0){
+		puts("\n");
+		puts(pntr);
+		puts(":");
 		_panic("failed to open device");
 	}
 	dev_t *d;
@@ -245,10 +299,14 @@ void main(){
 	if(!f || !f->verify){
 		puts("NOT FAT\n");
 	}
-	char *strtest = malloc(1024);
-	strcpy(strtest,"Test string 1\n");
-	char **saveptr = malloc(sizeof(*saveptr)*3);
-	
+	mountllfd = llnew();
+	struct LinkedList *mountll = llopen(mountllfd);
+
+	mountll->data = malloc(MOUNT_MAX*sizeof(mount_t));
+	if(!__mount(mountllfd,"/",d,f)){
+		_panic("Failed to mount rootfs\n");
+	}
+	__fat_open(d,"/init",O_RDONLY);
 	_panic("nothing to do\n");	
 	
 }

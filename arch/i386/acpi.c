@@ -48,6 +48,9 @@ struct FADT *getFADT(){
 	struct RSDPDescriptor *rsdp = findRSDP();
 #ifdef EARLY_MEM_PROTECT
 	if(!page_mapped(rsdp)){
+		puts("Mapping ");
+		putx(rsdp);
+		puts("\n");
 		identp(rsdp);
 //		puts("mapping address ");
 //		putx((int)rsdp);
@@ -61,10 +64,10 @@ struct FADT *getFADT(){
 #ifdef EARLY_MEM_PROTECT
 	if(!page_mapped(rsdt)){
 		identp(rsdt);
-//		puts("mapping address ");
-//		putx((int)rsdt);
-//		puts("\n");
-
+		puts("mapping address ");
+		putx((int)rsdt);
+		puts("\n");
+	
 	}
 #endif
 //	puts("0x");
@@ -77,7 +80,7 @@ struct FADT *getFADT(){
 #ifdef EARLY_MEM_PROTECT
 		if(!page_mapped(h)){
 			puts("mapping address ");
-			//putx((int)h);
+			putx((int)h);
 			puts("\n");
 			identp(h);
 		}

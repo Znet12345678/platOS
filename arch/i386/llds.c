@@ -28,13 +28,12 @@ int llnew(){
 		puts("Mapping LLDS page\n");
 #endif
 		void *buf = (void*)allocFree();
-
 		int v = map_page(buf,(void*)LLLOC);
 		if(!v)
 			_panic("Failed to allocate critical page");
 #ifdef DEBUG
 		puts("mapped page ");
-		putx((uint32_t)allocFree());
+		putx((uint32_t)buf);
 		puts(":");
 		putx(LLLOC);
 		puts("\n");
@@ -44,7 +43,6 @@ int llnew(){
 	}
 	struct LinkedList *lst = (struct LinkedList *)LLLOC;
 	uint8_t *buf = (uint8_t*)LLLOC;
-	
 	while(lst->next != NULL && !chkerr()){
 		lld++;
 		lst = lst->next;

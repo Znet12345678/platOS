@@ -45,7 +45,7 @@ struct __fat_extBS_32{
 	uint8_t vtl[8];
 }__attribute__((packed));
 fs_t *fat_init(dev_t*fat_part);
-	
+#define PATH_MAX 4096
 int __fat12_read(int fd,void *buf, unsigned long n);
 int __fat16_read(int fd,void *buf, unsigned long n);
 int __fat32_read(int fd,void *buf, unsigned long n);
@@ -58,4 +58,19 @@ int __fat32_open(const char *path,unsigned int flags);
 int __fat12_lseek(int fd,unsigned long pos,unsigned int flags);
 int __fat16_lseek(int fd,unsigned long pos,unsigned int flags);
 int __fat32_lseek(int fd,unsigned long pos,unsigned int flags);
+int __fat_open(dev_t *dev,const char *path,unsigned int flags);
+struct __fat_dir{
+	uint8_t name[0xb];
+	uint8_t attr;
+	uint8_t winNT;
+	uint8_t creationTimeSeconds;
+	uint16_t creationTime;
+	uint16_t creationDate;
+	uint16_t lastAccessedDate;
+	uint16_t clusterHigh;
+	uint16_t lastModifyTime;
+	uint16_t lastModifyDate;
+	uint16_t clusterLow;
+	uint32_t fileSize;
+}__attribute__((packed));
 #endif

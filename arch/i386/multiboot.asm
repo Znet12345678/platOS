@@ -1,14 +1,17 @@
 section .multiboot
 global multiboot_header
+extern _start
 multiboot_header:
 dd 0x1BADB002
+dd 4
+dd -(4+0x1BADB002)
 dd 0
-dd -(0x1BADB002 )
-framebuffer_tag_start:
-dw 5
-dw 1
-dd 1
-dd 80
-dd 25
-dd 32
-fbend:
+dd 0
+dd 0
+dd 0
+dd 0
+dd 0
+dd 320
+dd 200
+dd 8
+multiboot_end:

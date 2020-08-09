@@ -6,6 +6,9 @@ extern code
 extern end
 global _go_prot32
 _go_prot32:
+mov ah,0
+mov al,0x13
+int 0x10
 in al,0x92
 or al,2
 out 0x92,al

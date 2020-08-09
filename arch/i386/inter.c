@@ -4,18 +4,108 @@
 #include <inter.h>
 #include <libio.h>
 #include <stdint.h>
+extern void breakpoint();
+extern void page();
 int errflg = 0;
 int chkerr(){
 	return errflg;
 }
 void exception(uint32_t err,uint32_t eip,uint32_t cs,uint32_t cflags){
 	puts("\n");
-	asm("sub $4,%bp");
+	asm("add $4,%esp");
 	for(int i = 0; i < 80;i++)
 		putc('#');
 	panic(eip);
 }
-uint32_t jmp_arr[] = {[0 ... 0x20](uint32_t)exception};
+void _exception(uint32_t eip,uint32_t cs,uint32_t cflags){
+	puts("\n");
+	asm("add $4,%esp");
+	for(int i = 0; i < 80;i++)
+		putc('#');
+	panic(eip);
+}
+void stube(){
+	asm("add $8,%esp");
+	asm("jmp exception");
+}
+void divz(){
+	puts("divz:");
+	stube();
+}
+void debuge(){
+	puts("debuge:");
+	stube();
+}
+void nonmask(){
+	puts("nonmask:");
+	stube();
+}void overflow(){
+	puts("overflow:");
+	stube();
+}
+void bre(){
+	puts("bre:");
+	stube();
+}
+void invalidopcode(){
+	puts("invalid opcode:");
+	stube();
+}
+void devnotavailable(){
+	puts("Device Access Error\n");
+	stube();
+}
+void cso(){
+	puts("cso:");
+	stube();
+}
+void itss(){
+	puts("TSS Error\n");
+	asm("jmp exception");
+}
+void doubleFault(){
+	puts("!!!DOUBLE FAULT!!!\n");
+	asm("jmp exception");
+}
+void segnotpres(){
+	puts("!!!Segmentation Fault!!!\n");
+	asm("jmp exception");
+}
+void stacksegfault(){
+	puts("!!!Segmentation Fault!!!\n");
+	asm("jmp exception");
+}
+void gpf(){
+	puts("~~~GENERAL PROTECTION FAULT~~~\n");
+	asm("jmp exception");
+}
+void floatingpoint(){
+	puts("!!!Floating point exception!!!");
+	asm("jmp exception");
+}
+uint32_t jmp_arr[] = {
+	divz,
+	debuge,
+	nonmask,
+	breakpoint,
+	overflow,
+	bre,
+	invalidopcode,
+	devnotavailable,
+	doubleFault,
+	cso,
+	itss,
+	segnotpres,
+	stacksegfault,
+	gpf,
+	page,
+	exception,
+	floatingpoint,
+	exception,
+	exception,
+	exception,
+	exception
+};
 void init_int(){
 	extern unsigned char exception_end[],exception_start[];
 	int size;

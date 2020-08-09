@@ -14,8 +14,10 @@ void init_page(uint32_t *pg);
 #define KERNEL_BASE code_begin
 //#define MALLOC_BASE code_end
 struct __malloc_mem{
-	uint8_t alloc;
+
+	void *head;
 	uint32_t size;
+	struct __malloc_mem *nxt;
 }__attribute__((packed));
 void *malloc(unsigned long n);
 void free(void *mem);

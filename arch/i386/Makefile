@@ -8,7 +8,7 @@ AS=nasm -f elf
 
 IMAGETOOL=qemu-img
 DD=dd
-CFLAGS=-nostdlib -Iinclude -ffreestanding -DKERNEL_IDENT=\"v0-Alpha\" -DKERNEL_ARCH="\"i386(x86)\"" -DRELEASE="\"DEBUG\"" -DEARLY_MEM_PROTECT 
+CFLAGS=-nostdlib  -Iinclude -ffreestanding -DKERNEL_IDENT=\"v0-Alpha\" -DKERNEL_ARCH="\"i386(x86)\"" -DRELEASE="\"Silent\"" -DEARLY_MEM_PROTECT 
 LDFLAGS=-nostdlib -Tlinker32.ld
 all: Makefile bootloader.bin
 kernel: kernel32.elf 
@@ -18,7 +18,7 @@ bootloader.bin: kernel32.elf bs.bin padding o16 bs2.bin
 	dd if=bs.bin of=bs.img bs=1 seek=36 conv=notrunc
 	cat bs.img bs2.bin tail.img > bootloader.bin
 	cat pre.bin padding.bin kernel32.elf > kernel32.bin
-kernel32.elf.of: Makefile kernel32.o strchrnul.o stub.o llds.o acpi.o __start.o initdev.o vfs.o multiboot.o inter.o fat.o libmem.o libata.o ps2.o strtok_r.o strcspn.o memset.o strspn.o FSInstance.o fatInstance.o
+kernel32.elf.of: Makefile kernel32.o strchrnul.o stub.o llds.o acpi.o __start.o initdev.o vfs.o multiboot.o inter.o fat.o libmem.o libata.o ps2.o strtok_r.o strcspn.o memset.o strspn.o FSInstance.o fatInstance.o pagefault.o
 %.o: %.cpp $(DEPS)
 	$(CXX) -c -o $@ $< $(CFLAGS)
 kernel32.elf: kernel32.elf.of kernel32

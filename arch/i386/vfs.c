@@ -4,15 +4,19 @@
 #include <vfs.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 int __mount(int llfd,const char *mountpoint,dev_t *d,fs_t *fs){
 	struct LinkedList *ll = llopen(llfd);
 	mount_t *pntr = (mount_t*)ll->data;
 	while(pntr->nxt != NULL)
 		pntr = pntr->nxt;
+	dbg();
 	pntr->nxt = malloc(sizeof(*pntr->nxt));
+	dbg();
 	mount_t *sv = pntr;
 	pntr = pntr->nxt;
 	pntr->dev = d;
+	pntr->fs = fs;
 	pntr->fd = ((int(*)())fs->open)(NULL,O_RDWR);
 	memcpy(pntr->path,mountpoint,MAX_PATH_LEN);
 	if(!fs->verify){
